@@ -1226,7 +1226,7 @@
                 hideElement('noDataMessage');
                 
                 // Apps Script의 getCalls 액션 사용
-                const result = await GoogleAppsScriptAPI.request('getCalls', { date: searchDate });
+                const result = await GoogleAppsScriptAPI.getCalls({ date: searchDate });
                 
                 let data = [];
                 if (result.success) {
@@ -1425,6 +1425,9 @@
             const call = currentCallsData[index];
             currentProcessingCall = { ...call, index };
 
+            Utils.debugLog('선택된 콜 데이터:', call);
+            Utils.debugLog('설정된 currentProcessingCall:', currentProcessingCall);
+
             document.getElementById('modalPhoneNumber').textContent = call.phoneNumber;
             document.getElementById('modalCallInfo').textContent = 
                 `${call.callCount > 1 ? call.callCount + '번 중복 | ' : ''}${call.queue} | ${Math.round(call.duration / 60)}분 대기`;
@@ -1471,10 +1474,21 @@
                 saveBtn.disabled = true;
                 btnText.textContent = '저장 중...';
 
+                // 디버그 로그 추가
+                Utils.debugLog('현재 처리할 콜 정보:', currentProcessingCall);
+
                 // 그룹의 모든 콜에 대해 업데이트
                 const callsToUpdate = currentProcessingCall.groupCalls || [currentProcessingCall];
                 
+                Utils.debugLog('업데이트할 콜 목록:', callsToUpdate);
+
                 for (const call of callsToUpdate) {
+                    Utils.debugLog('처리 중인 개별 콜:', call);
+                    
+                    if (!call.rowIndex) {
+                        throw new Error(`rowIndex가 없습니다. 콜 정보: ${JSON.stringify(call)}`);
+                    }
+                    
                     const updateData = {
                         rowIndex: call.rowIndex,
                         processStatus: processStatus,
@@ -1482,8 +1496,10 @@
                         processNote: processNote
                     };
                     
+                    Utils.debugLog('전송할 업데이트 데이터:', updateData);
+                    
                     // Apps Script의 updateCall 액션 사용
-                    const result = await GoogleAppsScriptAPI.updateCall(call.rowIndex, updateData);
+                    const result = await GoogleAppsScriptAPI.updateCall(updateData);
                     
                     if (!result.success) {
                         throw new Error(result.error || '업데이트 실패');
