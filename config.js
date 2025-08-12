@@ -296,8 +296,17 @@ class GoogleSheetsAPI {
 function validateConfig() {
     const errors = [];
     
-    if (!CONFIG.GOOGLE_SHEETS.API_KEY || CONFIG.GOOGLE_SHEETS.API_KEY === 'YOUR_GOOGLE_SHEETS_API_KEY_HERE') {
-        errors.push('Google Sheets API Key가 설정되지 않았습니다.');
+    // Apps Script 사용시에는 API Key가 필요없음
+    if (CONFIG.API.API_TYPE === 'apps_script') {
+        // Apps Script URL 확인
+        if (!CONFIG.API.APPS_SCRIPT_URL || CONFIG.API.APPS_SCRIPT_URL === 'https://script.google.com/macros/s/YOUR_SCRIPT_ID/exec') {
+            errors.push('Google Apps Script URL이 설정되지 않았습니다.');
+        }
+    } else {
+        // Google Sheets API 사용시에만 API Key 확인
+        if (!CONFIG.GOOGLE_SHEETS.API_KEY || CONFIG.GOOGLE_SHEETS.API_KEY === 'YOUR_GOOGLE_SHEETS_API_KEY_HERE') {
+            errors.push('Google Sheets API Key가 설정되지 않았습니다.');
+        }
     }
     
     if (!CONFIG.GOOGLE_SHEETS.TOURVIS_SPREADSHEET_ID) {
@@ -309,7 +318,7 @@ function validateConfig() {
         return false;
     }
     
-    Utils.debugLog('✅ 설정 검증 완료');
+    Utils.debugLog('✅ 설정 검증 완료 - API 타입:', CONFIG.API.API_TYPE);
     return true;
 }
 
