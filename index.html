@@ -590,7 +590,7 @@
                 btnText.textContent = '로그인 중...';
                 
                 // 사용자 인증 (Apps Script의 authenticate 액션 사용)
-                const result = await GoogleAppsScriptAPI.authenticate(username, password);
+                const result = await GoogleAppsScriptAPI.request('authenticate', { username, password });
                 
                 if (result.success && result.user) {
                     // 세션 생성
