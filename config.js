@@ -22,7 +22,7 @@ const CONFIG = {
     
     // 사용자 관리 설정
     USER_MANAGEMENT: {
-        // Users 시트의 칼럼 구조 (A~H 칼럼)
+        // Users 시트의 칼럼 구조 (A~K 칼럼으로 확장)
         COLUMNS: {
             ID: 0,           // A: 사용자 ID (자동생성)
             USERNAME: 1,     // B: 사용자명 (로그인 ID)
@@ -31,7 +31,17 @@ const CONFIG = {
             EMAIL: 4,        // E: 이메일
             ROLE: 5,         // F: 권한 (admin, manager, user)
             CREATED_AT: 6,   // G: 생성일시
-            LAST_LOGIN: 7    // H: 마지막 로그인 일시
+            LAST_LOGIN: 7,   // H: 마지막 로그인 일시
+            STATUS: 8,       // I: 상태 (approved, pending, rejected)
+            PHONE: 9,        // J: 연락처
+            DEPARTMENT: 10   // K: 부서/팀
+        },
+        
+        // 계정 상태
+        STATUS: {
+            APPROVED: 'approved',   // 승인됨 (활성 계정)
+            PENDING: 'pending',     // 승인 대기중
+            REJECTED: 'rejected'    // 거부됨
         },
         
         // 기본 관리자 계정 정보
@@ -40,7 +50,8 @@ const CONFIG = {
             password: 'admin123',
             name: '시스템 관리자',
             email: 'admin@tidesquare.com',
-            role: 'admin'
+            role: 'admin',
+            status: 'approved'
         },
         
         // 비밀번호 정책
@@ -81,6 +92,10 @@ const CONFIG = {
             DELETE_USER: '/users',
             GET_CALLS: '/calls',
             UPDATE_CALL: '/calls',
+            GET_PENDING_REQUESTS: '/requests',
+            APPROVE_REQUEST: '/approve',
+            REJECT_REQUEST: '/reject',
+            SUBMIT_ACCOUNT_REQUEST: '/request',
             TEST_CONNECTION: '/test'
         }
     },
@@ -351,6 +366,23 @@ class GoogleAppsScriptAPI {
     
     static async authenticate(username, password) {
         return await this.request('authenticate', { username, password });
+    }
+    
+    // 계정 신청 관련 API
+    static async submitAccountRequest(requestData) {
+        return await this.request('submitAccountRequest', requestData);
+    }
+    
+    static async getPendingRequests() {
+        return await this.request('getPendingRequests');
+    }
+    
+    static async approveRequest(requestId, approvalData) {
+        return await this.request('approveRequest', { requestId, approvalData });
+    }
+    
+    static async rejectRequest(requestId, reason) {
+        return await this.request('rejectRequest', { requestId, reason });
     }
     
     // Missing Call 관련 API
