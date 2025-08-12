@@ -61,7 +61,7 @@
             
             <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #eee; font-size: 0.85rem; color: #666; text-align: center;">
                 © 2025 TideSquare. All rights reserved.<br>
-                <span class="text-small">기본 계정: admin / admin123</span>
+                <span class="text-small">계정 문의: 김영훈 담당자</span>
             </div>
         </div>
     </div>
@@ -69,11 +69,11 @@
     <!-- 메인 대시보드 -->
     <div id="mainContainer" class="main-container">
         <div class="header">
-            <h1>투어비스 Missing Call 관리 시스템 v1.0</h1>
+            <h1>투어비스 Missing Call 관리 시스템</h1>
             <div class="user-info">
                 <span class="user-name" id="currentUserName">사용자</span>
                 <span class="user-role" id="currentUserRole">권한</span>
-                <button class="btn btn-secondary btn-small" onclick="logout()">로그아웃</button>
+                <button class="btn btn-secondary btn-small" onclick="logout()" title="시스템에서 로그아웃">🚪 로그아웃</button>
             </div>
         </div>
 
@@ -99,6 +99,14 @@
                         <div class="form-group">
                             <label for="searchDate">조회 일자</label>
                             <input type="date" id="searchDate">
+                        </div>
+                        <div class="form-group">
+                            <label for="processFilter">처리 상태</label>
+                            <select id="processFilter">
+                                <option value="all">전체</option>
+                                <option value="processed">처리 완료</option>
+                                <option value="pending">미처리</option>
+                            </select>
                         </div>
                         <div class="form-group">
                             <button type="button" class="btn btn-primary" onclick="searchCalls()">
@@ -142,8 +150,8 @@
                 </div>
 
                 <div id="noDataMessage" class="text-center hidden" style="padding: 40px; color: #666;">
-                    <h3>📭 조회된 데이터가 없습니다</h3>
-                    <p>다른 날짜를 선택해서 조회해보세요.</p>
+                    <h3 id="noDataTitle">📭 조회된 데이터가 없습니다</h3>
+                    <p id="noDataSubtitle">다른 날짜를 선택하거나 필터 조건을 변경해보세요.</p>
                 </div>
             </div>
 
@@ -342,6 +350,9 @@
                 // 오늘 날짜로 설정
                 const today = new Date().toISOString().split('T')[0];
                 document.getElementById('searchDate').value = today;
+                
+                // 기본 필터 설정
+                document.getElementById('processFilter').value = 'all';
 
                 // 이벤트 리스너 등록
                 setupEventListeners();
@@ -548,16 +559,31 @@
         // 로그아웃
         function logout() {
             if (confirm('로그아웃 하시겠습니까?')) {
-                SessionManager.clearSession();
-                currentUser = null;
-                
-                // 연결 모니터링 중지
-                if (connectionCheckInterval) {
-                    clearInterval(connectionCheckInterval);
+                try {
+                    // 세션 초기화
+                    SessionManager.clearSession();
+                    currentUser = null;
+                    
+                    // 연결 모니터링 중지
+                    if (connectionCheckInterval) {
+                        clearInterval(connectionCheckInterval);
+                        connectionCheckInterval = null;
+                    }
+                    
+                    // 데이터 초기화
+                    currentCallsData = [];
+                    currentUsersData = [];
+                    currentProcessingCall = null;
+                    
+                    // 로그인 화면으로 이동
+                    showLoginScreen();
+                    Utils.debugLog('로그아웃 완료');
+                    
+                } catch (error) {
+                    Utils.debugLog('로그아웃 중 오류:', error);
+                    // 오류가 발생해도 강제로 로그인 화면으로 이동
+                    showLoginScreen();
                 }
-                
-                showLoginScreen();
-                Utils.debugLog('로그아웃 완료');
             }
         }
 
@@ -828,7 +854,9 @@
         // Missing Call 조회
         async function searchCalls() {
             const searchDate = document.getElementById('searchDate').value;
-            if (!searchDate) {
+            const processFilter = document.getElementById('processFilter').value;
+            
+            if (!searchDate || searchDate.trim() === '') {
                 alert('📅 조회할 날짜를 선택해주세요.');
                 return;
             }
@@ -844,6 +872,18 @@
                 let data = [];
                 if (result.success) {
                     data = processCallData(result.calls || []);
+                    
+                    // 처리 상태 필터 적용
+                    if (processFilter !== 'all') {
+                        data = data.filter(call => {
+                            if (processFilter === 'processed') {
+                                return call.processStatus && call.processStatus.trim() !== '';
+                            } else if (processFilter === 'pending') {
+                                return !call.processStatus || call.processStatus.trim() === '';
+                            }
+                            return true;
+                        });
+                    }
                 } else {
                     throw new Error(result.error || '데이터를 불러올 수 없습니다');
                 }
@@ -854,6 +894,21 @@
                     displayCallsResults(data);
                     showElement('callsResults');
                 } else {
+                    // 필터에 따른 메시지 변경
+                    const noDataTitle = document.getElementById('noDataTitle');
+                    const noDataSubtitle = document.getElementById('noDataSubtitle');
+                    
+                    if (processFilter === 'processed') {
+                        noDataTitle.textContent = '📭 처리 완료된 데이터가 없습니다';
+                        noDataSubtitle.textContent = '해당 날짜에 처리 완료된 Missing Call이 없습니다.';
+                    } else if (processFilter === 'pending') {
+                        noDataTitle.textContent = '📭 미처리 데이터가 없습니다';
+                        noDataSubtitle.textContent = '해당 날짜에 미처리 Missing Call이 없습니다.';
+                    } else {
+                        noDataTitle.textContent = '📭 조회된 데이터가 없습니다';
+                        noDataSubtitle.textContent = '다른 날짜를 선택해서 조회해보세요.';
+                    }
+                    
                     showElement('noDataMessage');
                 }
                 
@@ -934,8 +989,17 @@
         function displayCallsResults(data) {
             const countDiv = document.getElementById('resultsCount');
             const tbody = document.querySelector('#callsTable tbody');
+            const processFilter = document.getElementById('processFilter').value;
+            
+            // 필터 상태에 따른 제목 변경
+            let filterText = '';
+            if (processFilter === 'processed') {
+                filterText = ' (처리 완료만)';
+            } else if (processFilter === 'pending') {
+                filterText = ' (미처리만)';
+            }
 
-            countDiv.textContent = `📊 조회 결과: ${data.length}건`;
+            countDiv.textContent = `📊 조회 결과: ${data.length}건${filterText}`;
             tbody.innerHTML = '';
 
             data.forEach((call, index) => {
