@@ -129,7 +129,9 @@
                     <div style="margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
                         <h3 id="resultsCount" style="color: #333; margin: 0;">조회 결과</h3>
                         <div>
-                            <button class="btn btn-secondary btn-small" onclick="searchCalls()">🔄 새로고침</button>
+                            <button class="btn btn-secondary btn-small" onclick="searchCalls()" title="서버에서 최신 데이터를 가져옵니다">
+                                🔄 새로고침
+                            </button>
                             <button class="btn btn-primary btn-small" onclick="exportToCSV()" style="margin-left: 10px;">📥 CSV 내보내기</button>
                         </div>
                     </div>
@@ -370,6 +372,9 @@
                 <button type="button" class="btn btn-secondary" onclick="closeProcessModal()">취소</button>
                 <button type="button" class="btn btn-success" onclick="saveProcess()">
                     <span id="processSaveBtnText">💾 처리 완료</span>
+                </button>
+                <button type="button" class="btn btn-primary" onclick="saveAndNext()" style="margin-left: 10px;" title="처리 후 다음 미처리 건으로 이동">
+                    ⏩ 처리 후 다음
                 </button>
             </div>
         </div>
@@ -1225,8 +1230,12 @@
                 hideElement('callsResults');
                 hideElement('noDataMessage');
                 
+                Utils.debugLog('Missing Call 조회 시작:', { date: searchDate });
+                
                 // Apps Script의 getCalls 액션 사용
                 const result = await GoogleAppsScriptAPI.getCalls({ date: searchDate });
+                
+                Utils.debugLog('Apps Script 응답:', result);
                 
                 let data = [];
                 if (result.success) {
@@ -1322,7 +1331,7 @@
                                 processedData.push({
                                     ...latestCall,
                                     callCount: currentGroup.length,
-                                    groupCalls: [...currentGroup]
+                                    groupCalls: currentGroup.map(c => ({...c})) // 깊은 복사
                                 });
                             }
                             currentGroup = [];
@@ -1336,9 +1345,16 @@
                     processedData.push({
                         ...latestCall,
                         callCount: currentGroup.length,
-                        groupCalls: [...currentGroup]
+                        groupCalls: currentGroup.map(c => ({...c})) // 깊은 복사
                     });
                 }
+            });
+
+            // 디버그: 처리된 데이터 로그
+            Utils.debugLog('processCallData 완료:', {
+                rawCount: rawCalls.length,
+                processedCount: processedData.length,
+                sampleData: processedData.slice(0, 2)
             });
 
             return processedData;
@@ -1477,18 +1493,47 @@
                 // 디버그 로그 추가
                 Utils.debugLog('현재 처리할 콜 정보:', currentProcessingCall);
 
+                if (!currentProcessingCall) {
+                    throw new Error('처리할 콜 정보가 없습니다.');
+                }
+
                 // 그룹의 모든 콜에 대해 업데이트
                 const callsToUpdate = currentProcessingCall.groupCalls || [currentProcessingCall];
                 
                 Utils.debugLog('업데이트할 콜 목록:', callsToUpdate);
 
+                // 업데이트할 콜들의 rowIndex 검증
+                const validCalls = [];
                 for (const call of callsToUpdate) {
                     Utils.debugLog('처리 중인 개별 콜:', call);
                     
                     if (!call.rowIndex) {
-                        throw new Error(`rowIndex가 없습니다. 콜 정보: ${JSON.stringify(call)}`);
+                        Utils.debugLog('rowIndex가 없는 콜 발견:', call);
+                        // rowIndex가 없다면 현재 처리 중인 콜의 rowIndex 사용 시도
+                        if (currentProcessingCall.rowIndex) {
+                            call.rowIndex = currentProcessingCall.rowIndex;
+                            Utils.debugLog('rowIndex를 currentProcessingCall에서 복사:', call.rowIndex);
+                        } else {
+                            throw new Error(`rowIndex가 없습니다. 콜 정보: ${JSON.stringify(call)}`);
+                        }
                     }
                     
+                    // rowIndex가 숫자인지 확인
+                    const rowIndex = parseInt(call.rowIndex);
+                    if (isNaN(rowIndex) || rowIndex < 2) {
+                        throw new Error(`잘못된 rowIndex: ${call.rowIndex}`);
+                    }
+                    
+                    validCalls.push({
+                        ...call,
+                        rowIndex: rowIndex
+                    });
+                }
+
+                Utils.debugLog('검증된 콜 목록:', validCalls);
+
+                // 각 콜에 대해 업데이트 실행
+                for (const call of validCalls) {
                     const updateData = {
                         rowIndex: call.rowIndex,
                         processStatus: processStatus,
@@ -1504,14 +1549,17 @@
                     if (!result.success) {
                         throw new Error(result.error || '업데이트 실패');
                     }
+                    
+                    Utils.debugLog('개별 콜 업데이트 성공:', { rowIndex: call.rowIndex, result });
                 }
 
                 closeProcessModal();
                 
-                // 화면 새로고침
-                await searchCalls();
+                // 전체 새로고침 대신 해당 행만 업데이트
+                updateProcessedCallInTable(currentProcessingCall.index, processStatus, processManager);
                 
-                alert(`✅ OB콜 처리가 완료되었습니다.\n📞 ${currentProcessingCall.phoneNumber}\n✨ ${processStatus} (${processManager})`);
+                // 성공 메시지 (더 간단하게)
+                Utils.showToast(`✅ ${currentProcessingCall.phoneNumber} 처리 완료 (${processStatus})`, 'success');
 
             } catch (error) {
                 Utils.debugLog('처리 저장 오류:', error);
@@ -1522,6 +1570,166 @@
                 const btnText = document.getElementById('processSaveBtnText');
                 saveBtn.disabled = false;
                 btnText.textContent = '💾 처리 완료';
+            }
+        }
+
+        // 처리 후 다음 미처리 건으로 이동
+        async function saveAndNext() {
+            const processStatus = document.getElementById('processStatus').value;
+            const processManager = document.getElementById('processManager').value.trim();
+
+            if (!processStatus || !processManager) {
+                showAlert('processModalError', '처리 여부와 처리담당자를 모두 입력해주세요.', 'error');
+                return;
+            }
+
+            try {
+                // 현재 처리 저장
+                const saveBtn = document.querySelector('#processModal .btn-primary'); // "처리 후 다음" 버튼
+                const btnText = saveBtn.textContent;
+                
+                saveBtn.disabled = true;
+                saveBtn.textContent = '⏳ 처리 중...';
+
+                // 현재 콜 처리 (saveProcess와 동일한 로직이지만 UI 업데이트만)
+                const currentIndex = currentProcessingCall.index;
+                const callsToUpdate = currentProcessingCall.groupCalls || [currentProcessingCall];
+
+                for (const call of callsToUpdate) {
+                    if (!call.rowIndex) {
+                        if (currentProcessingCall.rowIndex) {
+                            call.rowIndex = currentProcessingCall.rowIndex;
+                        } else {
+                            throw new Error('rowIndex가 없습니다.');
+                        }
+                    }
+
+                    const updateData = {
+                        rowIndex: parseInt(call.rowIndex),
+                        processStatus: processStatus,
+                        processManager: processManager,
+                        processNote: document.getElementById('processNote').value.trim()
+                    };
+
+                    const result = await GoogleAppsScriptAPI.updateCall(updateData);
+                    if (!result.success) {
+                        throw new Error(result.error || '업데이트 실패');
+                    }
+                }
+
+                // 현재 처리된 항목 UI 업데이트
+                updateProcessedCallInTable(currentIndex, processStatus, processManager);
+
+                // 다음 미처리 건 찾기
+                let nextIndex = -1;
+                for (let i = currentIndex + 1; i < currentCallsData.length; i++) {
+                    if (!currentCallsData[i].processStatus || currentCallsData[i].processStatus.trim() === '') {
+                        nextIndex = i;
+                        break;
+                    }
+                }
+
+                // 다음 건이 없으면 처음부터 다시 찾기
+                if (nextIndex === -1) {
+                    for (let i = 0; i < currentIndex; i++) {
+                        if (!currentCallsData[i].processStatus || currentCallsData[i].processStatus.trim() === '') {
+                            nextIndex = i;
+                            break;
+                        }
+                    }
+                }
+
+                if (nextIndex !== -1) {
+                    // 다음 미처리 건으로 모달 전환
+                    Utils.showToast(`✅ ${currentProcessingCall.phoneNumber} 처리 완료`, 'success');
+                    
+                    // 잠시 대기 후 다음 건 열기
+                    setTimeout(() => {
+                        openProcessModal(nextIndex);
+                        
+                        // 테이블에서 해당 행으로 스크롤
+                        const tableBody = document.querySelector('#callsTable tbody');
+                        const targetRow = tableBody.querySelectorAll('tr')[nextIndex];
+                        if (targetRow) {
+                            targetRow.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                            // 행 하이라이트
+                            targetRow.style.backgroundColor = '#fef3c7';
+                            setTimeout(() => {
+                                targetRow.style.backgroundColor = '';
+                            }, 2000);
+                        }
+                    }, 500);
+                } else {
+                    // 더 이상 미처리 건이 없음
+                    closeProcessModal();
+                    Utils.showToast(`✅ ${currentProcessingCall.phoneNumber} 처리 완료 - 미처리 건이 더 없습니다`, 'success');
+                    alert('🎉 모든 건이 처리되었습니다!');
+                }
+
+            } catch (error) {
+                Utils.debugLog('처리 후 다음 오류:', error);
+                showAlert('processModalError', '처리 저장 중 오류가 발생했습니다: ' + error.message, 'error');
+            } finally {
+                // 버튼 복원
+                const saveBtn = document.querySelector('#processModal .btn-primary');
+                saveBtn.disabled = false;
+                saveBtn.textContent = '⏩ 처리 후 다음';
+            }
+        }
+
+        // 특정 콜의 처리 상태를 테이블에서 업데이트 (새로고침 없이)
+        function updateProcessedCallInTable(callIndex, processStatus, processManager) {
+            try {
+                // 현재 데이터 업데이트
+                if (currentCallsData[callIndex]) {
+                    currentCallsData[callIndex].processStatus = processStatus;
+                    currentCallsData[callIndex].processManager = processManager;
+                }
+
+                // 테이블 행 찾기
+                const tableBody = document.querySelector('#callsTable tbody');
+                const rows = tableBody.querySelectorAll('tr');
+                
+                if (rows[callIndex]) {
+                    const row = rows[callIndex];
+                    const cells = row.querySelectorAll('td');
+                    
+                    // 처리상태 칼럼 업데이트 (7번째 칼럼, 인덱스 6)
+                    if (cells[6]) {
+                        cells[6].innerHTML = `
+                            <span class="status-badge status-processed">
+                                ✅ 처리완료
+                            </span>
+                        `;
+                    }
+                    
+                    // 처리담당자 칼럼 업데이트 (8번째 칼럼, 인덱스 7)
+                    if (cells[7]) {
+                        cells[7].textContent = processManager;
+                    }
+                    
+                    // 액션 버튼 업데이트 (9번째 칼럼, 인덱스 8)
+                    if (cells[8]) {
+                        cells[8].innerHTML = `
+                            <button class="btn btn-primary btn-small" onclick="openProcessModal(${callIndex})">
+                                ✏️ 수정
+                            </button>
+                        `;
+                    }
+                    
+                    // 행 하이라이트 효과 (일시적)
+                    row.style.backgroundColor = '#d1fae5';
+                    setTimeout(() => {
+                        row.style.backgroundColor = '';
+                    }, 2000);
+                    
+                    Utils.debugLog('테이블 행 업데이트 완료:', { callIndex, processStatus, processManager });
+                }
+                
+            } catch (error) {
+                Utils.debugLog('테이블 행 업데이트 오류:', error);
+                // 오류 발생시 전체 새로고침으로 폴백
+                setTimeout(() => searchCalls(), 1000);
             }
         }
 
