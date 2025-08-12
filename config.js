@@ -59,6 +59,40 @@ const CONFIG = {
         REMEMBER_ME_DAYS: 7
     },
     
+    // API 설정
+    API: {
+        // Google Apps Script 웹앱 URL
+        APPS_SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbzGB1drhTBjQAIOmg02iRtQWPR4x2TFSta-7ha5LXdt-nQu4HQkU2P_qlpsoWJaHEo/exec',
+        
+        // 사용할 API 타입 ('sheets_api' 또는 'apps_script')
+        API_TYPE: 'apps_script',
+        
+        // 요청 타임아웃 (밀리초)
+        TIMEOUT: 30000,
+        
+        // 재시도 횟수
+        RETRY_COUNT: 3
+    },
+    
+    // API 설정
+    API: {
+        // Google Apps Script 웹앱 URL (배포 후 여기에 입력)
+        APPS_SCRIPT_URL: 'https://script.google.com/macros/s/YOUR_SCRIPT_ID/exec',
+        
+        // 사용할 API 타입 ('sheets_api' 또는 'apps_script')
+        API_TYPE: 'apps_script',
+        
+        // 엔드포인트 설정
+        ENDPOINTS: {
+            GET_USERS: '/users',
+            ADD_USER: '/users',
+            UPDATE_USER: '/users',
+            DELETE_USER: '/users',
+            GET_CALLS: '/calls',
+            UPDATE_CALL: '/calls'
+        }
+    },
+    
     // 환경 설정
     ENVIRONMENT: {
         IS_GITHUB_PAGES: true,
