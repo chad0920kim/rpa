@@ -293,9 +293,9 @@ class GoogleAppsScriptAPI {
             const response = await fetch(CONFIG.API.APPS_SCRIPT_URL, {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json',
+                    'Content-Type': 'text/plain', // CORS preflight 회피
                 },
-                body: JSON.stringify(requestData),
+                body: JSON.stringify(requestData), // JSON 문자열로 전송
                 mode: 'cors'
             });
             
@@ -315,6 +315,11 @@ class GoogleAppsScriptAPI {
             Utils.debugLog('API Error:', error);
             throw error;
         }
+    }
+    
+    // 함수 호출 (호환성을 위한 별칭)
+    static async callFunction(action, data = {}) {
+        return await this.request(action, data);
     }
     
     // 연결 테스트
