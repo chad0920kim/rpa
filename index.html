@@ -55,6 +55,10 @@
                 <button type="submit" class="btn btn-primary">
                     <span id="loginBtnText">로그인</span>
                 </button>
+                
+                <button type="button" class="btn btn-secondary mt-10" onclick="openAccountRequestModal()" style="width: 100%;">
+                    📧 계정 신청
+                </button>
             </form>
             
             <div id="loginError" class="alert alert-error hidden"></div>
@@ -287,6 +291,75 @@
         </div>
     </div>
 
+    <!-- 계정 신청 모달 -->
+    <div id="accountRequestModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>📧 계정 신청</h3>
+                <p style="color: #666; margin: 5px 0 0 0; font-size: 0.9rem;">
+                    신청서를 작성해주시면 관리자가 검토 후 계정을 생성해 드립니다.
+                </p>
+            </div>
+            
+            <form id="accountRequestForm">
+                <div class="form-group">
+                    <label for="requestName">성명 *</label>
+                    <input type="text" id="requestName" required placeholder="실명을 입력하세요" autocomplete="name">
+                </div>
+                
+                <div class="form-group">
+                    <label for="requestEmail">이메일 *</label>
+                    <input type="email" id="requestEmail" required placeholder="email@company.com" autocomplete="email">
+                </div>
+                
+                <div class="form-group">
+                    <label for="requestPhone">연락처 *</label>
+                    <input type="tel" id="requestPhone" required placeholder="010-0000-0000" autocomplete="tel">
+                </div>
+                
+                <div class="form-group">
+                    <label for="requestDepartment">부서/팀 *</label>
+                    <input type="text" id="requestDepartment" required placeholder="소속 부서나 팀을 입력하세요">
+                </div>
+                
+                <div class="form-group">
+                    <label for="requestPosition">직급/직책</label>
+                    <input type="text" id="requestPosition" placeholder="직급이나 직책을 입력하세요">
+                </div>
+                
+                <div class="form-group">
+                    <label for="requestRole">요청 권한 *</label>
+                    <select id="requestRole" required>
+                        <option value="">권한을 선택하세요</option>
+                        <option value="user">일반 사용자 (조회 및 처리만 가능)</option>
+                        <option value="manager">관리자 (사용자 관리 포함)</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="requestReason">신청 사유 *</label>
+                    <textarea id="requestReason" rows="3" required placeholder="계정이 필요한 업무상 사유를 간단히 설명해주세요"></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label for="requestUserId">희망 사용자 ID</label>
+                    <input type="text" id="requestUserId" placeholder="영문/숫자 조합 (비워두면 자동 생성)">
+                    <small class="text-small">비워두시면 관리자가 적절한 ID로 생성해 드립니다.</small>
+                </div>
+            </form>
+
+            <div id="accountRequestError" class="alert alert-error hidden"></div>
+            <div id="accountRequestSuccess" class="alert alert-success hidden"></div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="closeAccountRequestModal()">취소</button>
+                <button type="button" class="btn btn-primary" onclick="submitAccountRequest()">
+                    <span id="accountRequestBtnText">📧 신청서 제출</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- config.js 파일 로드 -->
     <script src="config.js"></script>
     
@@ -441,6 +514,12 @@
             document.getElementById('processForm').addEventListener('submit', function(e) {
                 e.preventDefault();
                 saveProcess();
+            });
+
+            // 계정 신청 폼
+            document.getElementById('accountRequestForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                submitAccountRequest();
             });
 
             // Enter 키 처리
@@ -867,7 +946,7 @@
                 hideElement('noDataMessage');
                 
                 // Apps Script의 getCalls 액션 사용
-                const result = await GoogleAppsScriptAPI.getCalls({ date: searchDate });
+                const result = await GoogleAppsScriptAPI.request('getCalls', { date: searchDate });
                 
                 let data = [];
                 if (result.success) {
@@ -1207,6 +1286,121 @@
         // 로딩 숨기기
         function hideLoading(elementId) {
             hideElement(elementId);
+        }
+
+        // 계정 신청 모달 열기
+        function openAccountRequestModal() {
+            document.getElementById('accountRequestForm').reset();
+            hideAlert('accountRequestError');
+            hideAlert('accountRequestSuccess');
+            document.getElementById('accountRequestModal').classList.add('show');
+            
+            // 첫 번째 입력 필드에 포커스
+            setTimeout(() => {
+                document.getElementById('requestName').focus();
+            }, 100);
+        }
+
+        // 계정 신청 모달 닫기
+        function closeAccountRequestModal() {
+            closeModal('accountRequestModal');
+        }
+
+        // 계정 신청서 제출
+        async function submitAccountRequest() {
+            const formData = {
+                name: document.getElementById('requestName').value.trim(),
+                email: document.getElementById('requestEmail').value.trim(),
+                phone: document.getElementById('requestPhone').value.trim(),
+                department: document.getElementById('requestDepartment').value.trim(),
+                position: document.getElementById('requestPosition').value.trim(),
+                role: document.getElementById('requestRole').value,
+                reason: document.getElementById('requestReason').value.trim(),
+                userId: document.getElementById('requestUserId').value.trim()
+            };
+
+            // 유효성 검사
+            if (!formData.name || !formData.email || !formData.phone || 
+                !formData.department || !formData.role || !formData.reason) {
+                showAlert('accountRequestError', '필수 항목(*)을 모두 입력해주세요.', 'error');
+                return;
+            }
+
+            if (!Utils.isValidEmail(formData.email)) {
+                showAlert('accountRequestError', '올바른 이메일 주소를 입력해주세요.', 'error');
+                return;
+            }
+
+            // 전화번호 형식 간단 체크
+            const phoneRegex = /^[\d\-\+\(\)\s]{10,}$/;
+            if (!phoneRegex.test(formData.phone)) {
+                showAlert('accountRequestError', '올바른 전화번호를 입력해주세요.', 'error');
+                return;
+            }
+
+            try {
+                // 버튼 상태 변경
+                const submitBtn = document.querySelector('#accountRequestModal .btn-primary');
+                const btnText = document.getElementById('accountRequestBtnText');
+                submitBtn.disabled = true;
+                btnText.textContent = '📧 전송 중...';
+
+                // 현재 날짜/시간 추가
+                formData.requestDate = new Date().toLocaleString('ko-KR');
+                
+                // Apps Script를 통한 이메일 발송
+                const result = await GoogleAppsScriptAPI.request('sendAccountRequest', formData);
+
+                if (result.success) {
+                    showAlert('accountRequestSuccess', 
+                        '✅ 계정 신청이 완료되었습니다!\n관리자 검토 후 연락드리겠습니다.', 'success');
+                    
+                    // 3초 후 모달 닫기
+                    setTimeout(() => {
+                        closeAccountRequestModal();
+                    }, 3000);
+                } else {
+                    throw new Error(result.error || '신청서 전송에 실패했습니다.');
+                }
+
+            } catch (error) {
+                Utils.debugLog('계정 신청 오류:', error);
+                
+                // 직접 이메일 클라이언트 열기 (백업 방안)
+                const emailSubject = encodeURIComponent('투어비스 시스템 계정 신청');
+                const emailBody = encodeURIComponent(`
+계정 신청 정보:
+
+• 성명: ${formData.name}
+• 이메일: ${formData.email}
+• 연락처: ${formData.phone}
+• 부서/팀: ${formData.department}
+• 직급/직책: ${formData.position || '미입력'}
+• 요청 권한: ${formData.role === 'user' ? '일반 사용자' : '관리자'}
+• 희망 사용자 ID: ${formData.userId || '자동 생성 요청'}
+• 신청 사유: ${formData.reason}
+• 신청 일시: ${formData.requestDate}
+
+감사합니다.
+                `);
+                
+                const mailtoLink = `mailto:kyh@tidesquare.com?subject=${emailSubject}&body=${emailBody}`;
+                
+                if (confirm('❌ 자동 전송에 실패했습니다.\n이메일 클라이언트를 열어서 직접 전송하시겠습니까?')) {
+                    window.location.href = mailtoLink;
+                    showAlert('accountRequestSuccess', 
+                        '📧 이메일 클라이언트가 열렸습니다.\n신청 내용을 확인 후 전송해주세요.', 'info');
+                } else {
+                    showAlert('accountRequestError', `전송 실패: ${error.message}`, 'error');
+                }
+
+            } finally {
+                // 버튼 복원
+                const submitBtn = document.querySelector('#accountRequestModal .btn-primary');
+                const btnText = document.getElementById('accountRequestBtnText');
+                submitBtn.disabled = false;
+                btnText.textContent = '📧 신청서 제출';
+            }
         }
     </script>
 </body>
