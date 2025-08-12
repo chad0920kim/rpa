@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>최종 CORS 테스트</title>
+    <title>임시 해결 테스트</title>
     <style>
         body {
             font-family: 'Segoe UI', sans-serif;
@@ -44,10 +44,6 @@
             font-size: 14px;
             box-sizing: border-box;
         }
-        .url-input:focus {
-            outline: none;
-            border-color: #007bff;
-        }
         .test-buttons {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -64,7 +60,6 @@
             font-size: 16px;
             font-weight: 500;
             transition: all 0.3s ease;
-            position: relative;
         }
         .test-btn:hover {
             background: #0056b3;
@@ -115,35 +110,29 @@
 </head>
 <body>
     <div class="container">
-        <h1>🚀 투어비스 CORS 최종 테스트</h1>
-        <div class="subtitle">새로운 Google Apps Script로 연결 테스트</div>
+        <h1>⚡ CORS Preflight 회피 테스트</h1>
+        <div class="subtitle">POST 요청 방식을 바꿔서 preflight 없이 테스트</div>
         
         <div class="url-section">
-            <label for="appsScriptUrl"><strong>📍 새 Google Apps Script URL:</strong></label>
+            <label for="appsScriptUrl"><strong>📍 현재 사용 중인 URL:</strong></label>
             <input 
                 type="text" 
                 id="appsScriptUrl" 
                 class="url-input"
-                placeholder="새로 배포한 Google Apps Script 웹앱 URL을 여기에 붙여넣으세요"
+                placeholder="기존에 성공한 GET 테스트 URL을 그대로 사용하세요"
             >
-            <small style="color: #666;">⚠️ 완전히 새로운 프로젝트에서 배포한 URL을 사용하세요</small>
+            <small style="color: #666;">💡 GET 테스트가 성공한 같은 URL을 사용합니다</small>
         </div>
 
         <div class="test-buttons">
-            <button class="test-btn" onclick="testGet()" id="getBtn">
-                1️⃣ GET 테스트
+            <button class="test-btn" onclick="testFormData()" id="formBtn">
+                🔄 Form Data POST
             </button>
-            <button class="test-btn" onclick="testPost()" id="postBtn">
-                2️⃣ POST 테스트
+            <button class="test-btn" onclick="testPlainText()" id="textBtn">
+                📝 Plain Text POST
             </button>
-            <button class="test-btn" onclick="testSystem()" id="systemBtn">
-                3️⃣ 시스템 상태
-            </button>
-            <button class="test-btn" onclick="testUsers()" id="usersBtn">
-                4️⃣ 사용자 조회
-            </button>
-            <button class="test-btn" onclick="testCalls()" id="callsBtn">
-                5️⃣ Missing Call
+            <button class="test-btn" onclick="testURLEncoded()" id="urlBtn">
+                🌐 URL Encoded POST
             </button>
             <button class="test-btn" onclick="clearResults()" style="background: #6c757d;">
                 🗑️ 결과 지우기
@@ -151,15 +140,17 @@
         </div>
 
         <div class="result-area" id="results">
-📋 테스트 준비 완료
+💡 CORS Preflight 회피 전략
 
-1. 새 Google Apps Script 프로젝트 생성
-2. 제공된 간단한 코드 붙여넣기  
-3. "모든 사용자" 권한으로 웹앱 배포
-4. 새 URL을 위 입력란에 붙여넣기
-5. 1번부터 순서대로 테스트 진행
+문제: POST + Content-Type: application/json → preflight 요청 발생
+해결: 다른 Content-Type 사용 → preflight 회피
 
-🎯 목표: 모든 테스트가 성공하면 CORS 문제 해결!
+테스트할 방법들:
+1. FormData 사용
+2. Plain Text 사용  
+3. URL Encoded 사용
+
+모든 방법이 실패하면 Google Apps Script에 doOptions 함수를 추가해야 합니다.
         </div>
     </div>
 
@@ -204,22 +195,30 @@
             }
         }
 
-        async function testGet() {
+        async function testFormData() {
             const url = getUrl();
             if (!url) {
                 addResult('❌ URL을 입력해주세요', 'error');
                 return;
             }
 
-            setButtonState('getBtn', 'loading');
+            setButtonState('formBtn', 'loading');
 
             try {
-                addResult('🔄 GET 요청 시작...', 'info');
+                addResult('🔄 FormData POST 요청 시작...', 'info');
                 
+                const formData = new FormData();
+                formData.append('action', 'test');
+                formData.append('message', 'FormData 테스트');
+                formData.append('timestamp', new Date().toISOString());
+
                 const response = await fetch(url, {
-                    method: 'GET',
-                    mode: 'cors'
+                    method: 'POST',
+                    mode: 'cors',
+                    body: formData  // Content-Type 자동 설정
                 });
+
+                addResult(`📊 응답 상태: ${response.status}`, 'info');
 
                 if (!response.ok) {
                     throw new Error(`HTTP ${response.status}: ${response.statusText}`);
@@ -227,41 +226,45 @@
 
                 const data = await response.json();
                 
-                addResult(`✅ GET 요청 성공!
-응답 상태: ${response.status}
+                addResult(`✅ FormData POST 성공!
 응답 데이터: ${JSON.stringify(data, null, 2)}`, 'success');
                 
-                setButtonState('getBtn', 'success');
+                setButtonState('formBtn', 'success');
 
             } catch (error) {
-                addResult(`❌ GET 요청 실패: ${error.message}`, 'error');
-                setButtonState('getBtn', 'error');
+                addResult(`❌ FormData POST 실패: ${error.message}`, 'error');
+                setButtonState('formBtn', 'error');
             }
         }
 
-        async function testPost() {
+        async function testPlainText() {
             const url = getUrl();
             if (!url) {
                 addResult('❌ URL을 입력해주세요', 'error');
                 return;
             }
 
-            setButtonState('postBtn', 'loading');
+            setButtonState('textBtn', 'loading');
 
             try {
-                addResult('🔄 POST 요청 시작...', 'info');
+                addResult('🔄 Plain Text POST 요청 시작...', 'info');
                 
+                const textData = JSON.stringify({
+                    action: 'test',
+                    message: 'Plain Text 테스트',
+                    timestamp: new Date().toISOString()
+                });
+
                 const response = await fetch(url, {
                     method: 'POST',
                     mode: 'cors',
                     headers: {
-                        'Content-Type': 'application/json',
+                        'Content-Type': 'text/plain'  // preflight 회피
                     },
-                    body: JSON.stringify({
-                        action: 'test',
-                        message: 'CORS 테스트 성공!'
-                    })
+                    body: textData
                 });
+
+                addResult(`📊 응답 상태: ${response.status}`, 'info');
 
                 if (!response.ok) {
                     throw new Error(`HTTP ${response.status}: ${response.statusText}`);
@@ -269,40 +272,44 @@
 
                 const data = await response.json();
                 
-                addResult(`✅ POST 요청 성공!
-응답 상태: ${response.status}
+                addResult(`✅ Plain Text POST 성공!
 응답 데이터: ${JSON.stringify(data, null, 2)}`, 'success');
                 
-                setButtonState('postBtn', 'success');
+                setButtonState('textBtn', 'success');
 
             } catch (error) {
-                addResult(`❌ POST 요청 실패: ${error.message}`, 'error');
-                setButtonState('postBtn', 'error');
+                addResult(`❌ Plain Text POST 실패: ${error.message}`, 'error');
+                setButtonState('textBtn', 'error');
             }
         }
 
-        async function testSystem() {
+        async function testURLEncoded() {
             const url = getUrl();
             if (!url) {
                 addResult('❌ URL을 입력해주세요', 'error');
                 return;
             }
 
-            setButtonState('systemBtn', 'loading');
+            setButtonState('urlBtn', 'loading');
 
             try {
-                addResult('🔄 시스템 상태 확인 중...', 'info');
+                addResult('🔄 URL Encoded POST 요청 시작...', 'info');
                 
+                const params = new URLSearchParams();
+                params.append('action', 'test');
+                params.append('message', 'URL Encoded 테스트');
+                params.append('timestamp', new Date().toISOString());
+
                 const response = await fetch(url, {
                     method: 'POST',
                     mode: 'cors',
                     headers: {
-                        'Content-Type': 'application/json',
+                        'Content-Type': 'application/x-www-form-urlencoded'
                     },
-                    body: JSON.stringify({
-                        action: 'checkSystemStatus'
-                    })
+                    body: params
                 });
+
+                addResult(`📊 응답 상태: ${response.status}`, 'info');
 
                 if (!response.ok) {
                     throw new Error(`HTTP ${response.status}: ${response.statusText}`);
@@ -310,136 +317,23 @@
 
                 const data = await response.json();
                 
-                if (data.success) {
-                    const status = data.status;
-                    addResult(`✅ 시스템 상태 확인 성공!
-- 스프레드시트 연결: ${status.spreadsheetConnected ? '✅' : '❌'}
-- 스프레드시트 이름: ${status.spreadsheetName}
-- Users 시트: ${status.usersSheetExists ? '✅' : '❌'}
-- 미싱콜 시트: ${status.callsSheetExists ? '✅' : '❌'}
-- 사용 가능한 시트: ${status.availableSheets?.join(', ')}
-- 확인 시간: ${status.timestamp}`, 'success');
-                    
-                    setButtonState('systemBtn', 'success');
-                } else {
-                    addResult(`⚠️ 시스템 상태 확인 실패: ${data.error}`, 'warning');
-                    setButtonState('systemBtn', 'error');
-                }
+                addResult(`✅ URL Encoded POST 성공!
+응답 데이터: ${JSON.stringify(data, null, 2)}`, 'success');
+                
+                setButtonState('urlBtn', 'success');
 
             } catch (error) {
-                addResult(`❌ 시스템 상태 확인 오류: ${error.message}`, 'error');
-                setButtonState('systemBtn', 'error');
-            }
-        }
-
-        async function testUsers() {
-            const url = getUrl();
-            if (!url) {
-                addResult('❌ URL을 입력해주세요', 'error');
-                return;
-            }
-
-            setButtonState('usersBtn', 'loading');
-
-            try {
-                addResult('🔄 사용자 조회 중...', 'info');
-                
-                const response = await fetch(url, {
-                    method: 'POST',
-                    mode: 'cors',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        action: 'getUsers'
-                    })
-                });
-
-                if (!response.ok) {
-                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-                }
-
-                const data = await response.json();
-                
-                if (data.success) {
-                    addResult(`✅ 사용자 조회 성공!
-총 사용자 수: ${data.users.length}명
-${data.users.map((user, index) => 
-`${index + 1}. ${user.name} (${user.username}) - ${user.role}`
-).join('\n')}`, 'success');
-                    
-                    setButtonState('usersBtn', 'success');
-                } else {
-                    addResult(`⚠️ 사용자 조회 실패: ${data.error}`, 'warning');
-                    setButtonState('usersBtn', 'error');
-                }
-
-            } catch (error) {
-                addResult(`❌ 사용자 조회 오류: ${error.message}`, 'error');
-                setButtonState('usersBtn', 'error');
-            }
-        }
-
-        async function testCalls() {
-            const url = getUrl();
-            if (!url) {
-                addResult('❌ URL을 입력해주세요', 'error');
-                return;
-            }
-
-            setButtonState('callsBtn', 'loading');
-
-            try {
-                const today = new Date().toISOString().split('T')[0];
-                addResult(`🔄 Missing Call 조회 중... (${today})`, 'info');
-                
-                const response = await fetch(url, {
-                    method: 'POST',
-                    mode: 'cors',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        action: 'getCalls',
-                        date: today
-                    })
-                });
-
-                if (!response.ok) {
-                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-                }
-
-                const data = await response.json();
-                
-                if (data.success) {
-                    addResult(`✅ Missing Call 조회 성공!
-날짜: ${today}
-총 건수: ${data.calls.length}건
-${data.calls.length > 0 ? 
-    data.calls.slice(0, 3).map(call => 
-        `- ${call.phoneNumber} (${call.startTime}-${call.endTime})`
-    ).join('\n') + (data.calls.length > 3 ? '\n... 외 ' + (data.calls.length - 3) + '건' : '')
-    : '해당 날짜에 Missing Call 데이터가 없습니다.'
-}`, 'success');
-                    
-                    setButtonState('callsBtn', 'success');
-                } else {
-                    addResult(`⚠️ Missing Call 조회 실패: ${data.error}`, 'warning');
-                    setButtonState('callsBtn', 'error');
-                }
-
-            } catch (error) {
-                addResult(`❌ Missing Call 조회 오류: ${error.message}`, 'error');
-                setButtonState('callsBtn', 'error');
+                addResult(`❌ URL Encoded POST 실패: ${error.message}`, 'error');
+                setButtonState('urlBtn', 'error');
             }
         }
 
         function clearResults() {
-            document.getElementById('results').innerHTML = `📋 결과가 지워졌습니다. 다시 테스트를 진행하세요.`;
+            document.getElementById('results').innerHTML = `💡 결과가 지워졌습니다. 다시 테스트를 진행하세요.`;
             testCount = 0;
             
             // 모든 버튼 상태 초기화
-            ['getBtn', 'postBtn', 'systemBtn', 'usersBtn', 'callsBtn'].forEach(buttonId => {
+            ['formBtn', 'textBtn', 'urlBtn'].forEach(buttonId => {
                 const button = document.getElementById(buttonId);
                 button.className = 'test-btn';
                 button.disabled = false;
@@ -448,16 +342,21 @@ ${data.calls.length > 0 ?
 
         // 페이지 로드 시 안내
         window.addEventListener('load', function() {
-            addResult(`🎯 CORS 테스트 준비 완료
+            addResult(`⚡ CORS Preflight 회피 테스트
 
-다음 단계를 따라하세요:
-1. 새 Google Apps Script 프로젝트 생성
-2. 제공된 코드 붙여넣기
-3. "모든 사용자" 권한으로 웹앱 배포
-4. 새 URL을 위 입력란에 붙여넣기
-5. 1번부터 차례대로 테스트 진행
+현재 상황:
+- GET 요청: ✅ 성공
+- POST 요청: ❌ 실패 (preflight 문제)
 
-💡 모든 테스트가 성공하면 CORS 문제가 완전히 해결됩니다!`, 'info');
+해결 전략:
+preflight가 발생하지 않는 Content-Type을 사용
+
+테스트 순서:
+1. FormData POST (가장 간단)
+2. Plain Text POST  
+3. URL Encoded POST
+
+💡 하나라도 성공하면 임시 해결책이 있습니다!`, 'info');
         });
     </script>
 </body>
