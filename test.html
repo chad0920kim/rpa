@@ -3,618 +3,462 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>투어비스 시스템 연결 테스트</title>
+    <title>최종 CORS 테스트</title>
     <style>
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            max-width: 800px;
-            margin: 50px auto;
+            font-family: 'Segoe UI', sans-serif;
+            max-width: 700px;
+            margin: 30px auto;
             padding: 20px;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
         }
         .container {
             background: white;
-            border-radius: 10px;
+            border-radius: 15px;
             padding: 30px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            box-shadow: 0 15px 35px rgba(0,0,0,0.1);
         }
         h1 {
             text-align: center;
             color: #333;
+            margin-bottom: 10px;
+        }
+        .subtitle {
+            text-align: center;
+            color: #666;
             margin-bottom: 30px;
         }
-        .test-section {
-            margin: 20px 0;
+        .url-section {
+            background: #f8f9fa;
             padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 25px;
+        }
+        .url-input {
+            width: 100%;
+            padding: 12px;
             border: 2px solid #e1e5e9;
             border-radius: 8px;
-            background: #f8f9fa;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            box-sizing: border-box;
         }
-        .test-button {
+        .url-input:focus {
+            outline: none;
+            border-color: #007bff;
+        }
+        .test-buttons {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+        .test-btn {
             background: #007bff;
             color: white;
             border: none;
-            padding: 12px 24px;
-            border-radius: 6px;
+            padding: 15px 20px;
+            border-radius: 8px;
             cursor: pointer;
             font-size: 16px;
-            transition: background 0.3s;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            position: relative;
         }
-        .test-button:hover {
+        .test-btn:hover {
             background: #0056b3;
+            transform: translateY(-2px);
         }
-        .test-button:disabled {
+        .test-btn:disabled {
             background: #6c757d;
             cursor: not-allowed;
+            transform: none;
         }
-        .result-box {
-            margin-top: 15px;
-            padding: 15px;
-            border-radius: 6px;
-            white-space: pre-wrap;
+        .test-btn.success {
+            background: #28a745;
+        }
+        .test-btn.error {
+            background: #dc3545;
+        }
+        .result-area {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            max-height: 500px;
+            overflow-y: auto;
+            border: 1px solid #e1e5e9;
             font-family: 'Courier New', monospace;
-            font-size: 14px;
-        }
-        .success {
-            background: #d4edda;
-            color: #155724;
-            border: 1px solid #c3e6cb;
-        }
-        .error {
-            background: #f8d7da;
-            color: #721c24;
-            border: 1px solid #f5c6cb;
-        }
-        .info {
-            background: #d1ecf1;
-            color: #0c5460;
-            border: 1px solid #bee5eb;
-        }
-        .config-info {
-            background: #fff3cd;
-            border: 1px solid #ffeaa7;
-            color: #856404;
-            padding: 15px;
-            border-radius: 6px;
-            margin-bottom: 20px;
+            font-size: 13px;
+            white-space: pre-wrap;
+            line-height: 1.4;
         }
         .loading {
             display: inline-block;
-            width: 20px;
-            height: 20px;
-            border: 3px solid #f3f3f3;
-            border-top: 3px solid #007bff;
+            width: 16px;
+            height: 16px;
+            border: 2px solid #ffffff;
+            border-top: 2px solid transparent;
             border-radius: 50%;
             animation: spin 1s linear infinite;
-            margin-right: 10px;
+            margin-right: 8px;
         }
         @keyframes spin {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
+        .success-text { color: #28a745; }
+        .error-text { color: #dc3545; }
+        .warning-text { color: #ffc107; }
+        .info-text { color: #17a2b8; }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>🚀 투어비스 Missing Call 시스템</h1>
-        <h2 style="text-align: center; color: #666; margin-bottom: 30px;">연결 테스트</h2>
+        <h1>🚀 투어비스 CORS 최종 테스트</h1>
+        <div class="subtitle">새로운 Google Apps Script로 연결 테스트</div>
         
-        <div class="config-info">
-            <h3>📋 현재 설정</h3>
-            <div id="configInfo"></div>
+        <div class="url-section">
+            <label for="appsScriptUrl"><strong>📍 새 Google Apps Script URL:</strong></label>
+            <input 
+                type="text" 
+                id="appsScriptUrl" 
+                class="url-input"
+                placeholder="새로 배포한 Google Apps Script 웹앱 URL을 여기에 붙여넣으세요"
+            >
+            <small style="color: #666;">⚠️ 완전히 새로운 프로젝트에서 배포한 URL을 사용하세요</small>
         </div>
 
-        <div class="test-section">
-            <h3>🔗 Google Apps Script 연결 테스트</h3>
-            <p>Google Apps Script 웹앱과의 연결 상태를 확인합니다.</p>
-            <button class="test-button" onclick="testConnection()" id="testBtn">
-                연결 테스트 실행
+        <div class="test-buttons">
+            <button class="test-btn" onclick="testGet()" id="getBtn">
+                1️⃣ GET 테스트
             </button>
-            <div id="connectionResult"></div>
+            <button class="test-btn" onclick="testPost()" id="postBtn">
+                2️⃣ POST 테스트
+            </button>
+            <button class="test-btn" onclick="testSystem()" id="systemBtn">
+                3️⃣ 시스템 상태
+            </button>
+            <button class="test-btn" onclick="testUsers()" id="usersBtn">
+                4️⃣ 사용자 조회
+            </button>
+            <button class="test-btn" onclick="testCalls()" id="callsBtn">
+                5️⃣ Missing Call
+            </button>
+            <button class="test-btn" onclick="clearResults()" style="background: #6c757d;">
+                🗑️ 결과 지우기
+            </button>
         </div>
 
-        <div class="test-section">
-            <h3>📊 시스템 상태 확인</h3>
-            <p>스프레드시트 연결 및 시트 구조를 확인합니다.</p>
-            <button class="test-button" onclick="checkSystemStatus()" id="statusBtn">
-                시스템 상태 확인
-            </button>
-            <div id="statusResult"></div>
-        </div>
+        <div class="result-area" id="results">
+📋 테스트 준비 완료
 
-        <div class="test-section">
-            <h3>👥 사용자 데이터 조회</h3>
-            <p>사용자 관리 시트의 데이터를 조회합니다.</p>
-            <button class="test-button" onclick="testGetUsers()" id="usersBtn">
-                사용자 목록 조회
-            </button>
-            <div id="usersResult"></div>
-        </div>
+1. 새 Google Apps Script 프로젝트 생성
+2. 제공된 간단한 코드 붙여넣기  
+3. "모든 사용자" 권한으로 웹앱 배포
+4. 새 URL을 위 입력란에 붙여넣기
+5. 1번부터 순서대로 테스트 진행
 
-        <div class="test-section">
-            <h3>📞 Missing Call 데이터 조회</h3>
-            <p>오늘 날짜의 Missing Call 데이터를 조회합니다.</p>
-            <input type="date" id="dateInput" style="margin-right: 10px; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
-            <button class="test-button" onclick="testGetCalls()" id="callsBtn">
-                데이터 조회
-            </button>
-            <div id="callsResult"></div>
+🎯 목표: 모든 테스트가 성공하면 CORS 문제 해결!
         </div>
     </div>
 
-    <!-- config.js 파일 로드 -->
     <script>
-// config.js - GitHub Pages용 설정 파일
-// ⚠️ 이 파일은 공개적으로 접근 가능하므로 민감한 정보를 포함하지 마세요
+        let testCount = 0;
 
-const CONFIG = {
-    // Google Sheets 설정
-    GOOGLE_SHEETS: {
-        // 투어비스 Missing Call 데이터 시트
-        TOURVIS_SPREADSHEET_ID: '15Pyx-yh-G8OmQPhAc7DVze6Yl6drTXf3wKIr1dB1cfE',
-        TOURVIS_WORKSHEET_NAME: '미싱콜',
-        
-        // 사용자 관리 시트 (같은 스프레드시트의 다른 시트)
-        USER_SPREADSHEET_ID: '15Pyx-yh-G8OmQPhAc7DVze6Yl6drTXf3wKIr1dB1cfE',
-        USER_WORKSHEET_NAME: 'Users',
-        
-        // Google Sheets API 키 (읽기 전용 권한만)
-        // 실제 사용시 본인의 API 키로 교체 필요
-        API_KEY: 'YOUR_GOOGLE_SHEETS_API_KEY_HERE',
-        
-        // API 기본 URL
-        API_BASE_URL: 'https://sheets.googleapis.com/v4/spreadsheets'
-    },
-    
-    // 사용자 관리 설정
-    USER_MANAGEMENT: {
-        // Users 시트의 칼럼 구조 (A~H 칼럼)
-        COLUMNS: {
-            ID: 0,           // A: 사용자 ID (자동생성)
-            USERNAME: 1,     // B: 사용자명 (로그인 ID)
-            PASSWORD_HASH: 2, // C: 비밀번호 해시
-            NAME: 3,         // D: 실명
-            EMAIL: 4,        // E: 이메일
-            ROLE: 5,         // F: 권한 (admin, manager, user)
-            CREATED_AT: 6,   // G: 생성일시
-            LAST_LOGIN: 7    // H: 마지막 로그인 일시
-        },
-        
-        // 기본 관리자 계정 정보
-        DEFAULT_ADMIN: {
-            username: 'admin',
-            password: 'admin123',
-            name: '시스템 관리자',
-            email: 'admin@tidesquare.com',
-            role: 'admin'
-        },
-        
-        // 비밀번호 정책
-        PASSWORD_POLICY: {
-            MIN_LENGTH: 6,
-            MAX_LENGTH: 20,
-            REQUIRE_NUMBER: true,
-            REQUIRE_SPECIAL: false
+        function getUrl() {
+            return document.getElementById('appsScriptUrl').value.trim();
         }
-    },
-    
-    // 세션 관리
-    SESSION: {
-        TOKEN_EXPIRE_HOURS: 8,
-        STORAGE_KEY: 'tourvis_user_session',
-        REMEMBER_ME_DAYS: 7
-    },
-    
-    // API 설정 (실제 배포된 Apps Script URL 사용)
-    API: {
-        // Google Apps Script 웹앱 URL (실제 배포된 URL)
-        APPS_SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbzGB1drhTBjQAIOmg02iRtQWPR4x2TFSta-7ha5LXdt-nQu4HQkU2P_qlpsoWJaHEo/exec',
-        
-        // 사용할 API 타입 ('sheets_api' 또는 'apps_script')
-        API_TYPE: 'apps_script',
-        
-        // 요청 타임아웃 (밀리초)
-        TIMEOUT: 30000,
-        
-        // 재시도 횟수
-        RETRY_COUNT: 3,
-        
-        // 엔드포인트 설정
-        ENDPOINTS: {
-            GET_USERS: '/users',
-            ADD_USER: '/users',
-            UPDATE_USER: '/users',
-            DELETE_USER: '/users',
-            GET_CALLS: '/calls',
-            UPDATE_CALL: '/calls',
-            TEST_CONNECTION: '/test'
-        }
-    },
-    
-    // 환경 설정
-    ENVIRONMENT: {
-        IS_GITHUB_PAGES: true,
-        DEBUG_MODE: true,
-        VERSION: '1.0.0'
-    },
-    
-    // UI 설정
-    UI: {
-        // 대시보드 설정
-        PAGE_SIZE: 50,
-        AUTO_REFRESH_INTERVAL: 60000, // 1분
-        TOAST_DURATION: 3000,
-        
-        // 로그인 화면 설정
-        LOGIN: {
-            COMPANY_NAME: '투어비스',
-            SYSTEM_NAME: '항공(국제선) Missing Call 처리 시스템',
-            COPYRIGHT: '© 2025 TideSquare. All rights reserved.',
-            BACKGROUND_COLOR: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
-        }
-    }
-};
 
-// 유틸리티 함수들
-const Utils = {
-    // 간단한 해시 함수 (클라이언트용)
-    simpleHash(text, salt = '') {
-        const combined = text + salt + 'tourvis_salt_2025';
-        let hash = 0;
-        for (let i = 0; i < combined.length; i++) {
-            const char = combined.charCodeAt(i);
-            hash = ((hash << 5) - hash) + char;
-            hash = hash & hash; // 32bit 정수로 변환
-        }
-        return Math.abs(hash).toString(36);
-    },
-    
-    // UUID 생성
-    generateUUID() {
-        return 'user_' + Date.now().toString(36) + Math.random().toString(36).substr(2);
-    },
-    
-    // 현재 시간 문자열
-    getCurrentDateTime() {
-        return new Date().toLocaleString('ko-KR');
-    },
-    
-    // 이메일 유효성 검사
-    isValidEmail(email) {
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        return emailRegex.test(email);
-    },
-    
-    // 비밀번호 유효성 검사
-    isValidPassword(password) {
-        const policy = CONFIG.USER_MANAGEMENT.PASSWORD_POLICY;
-        
-        if (password.length < policy.MIN_LENGTH || password.length > policy.MAX_LENGTH) {
-            return { valid: false, message: `비밀번호는 ${policy.MIN_LENGTH}-${policy.MAX_LENGTH}자 사이여야 합니다.` };
-        }
-        
-        if (policy.REQUIRE_NUMBER && !/\d/.test(password)) {
-            return { valid: false, message: '비밀번호에는 숫자가 포함되어야 합니다.' };
-        }
-        
-        if (policy.REQUIRE_SPECIAL && !/[!@#$%^&*(),.?":{}|<>]/.test(password)) {
-            return { valid: false, message: '비밀번호에는 특수문자가 포함되어야 합니다.' };
-        }
-        
-        return { valid: true, message: '유효한 비밀번호입니다.' };
-    },
-    
-    // 디버그 로그
-    debugLog(...args) {
-        if (CONFIG.ENVIRONMENT.DEBUG_MODE) {
-            console.log('[DEBUG]', new Date().toISOString(), ...args);
-        }
-    },
-    
-    // Toast 메시지 표시
-    showToast(message, type = 'info') {
-        const toast = document.createElement('div');
-        toast.className = `toast toast-${type}`;
-        toast.textContent = message;
-        toast.style.cssText = `
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            padding: 12px 24px;
-            border-radius: 4px;
-            color: white;
-            font-weight: 500;
-            z-index: 9999;
-            opacity: 0;
-            transition: opacity 0.3s ease;
-        `;
-        
-        switch(type) {
-            case 'success':
-                toast.style.backgroundColor = '#10b981';
-                break;
-            case 'error':
-                toast.style.backgroundColor = '#ef4444';
-                break;
-            case 'warning':
-                toast.style.backgroundColor = '#f59e0b';
-                break;
-            default:
-                toast.style.backgroundColor = '#3b82f6';
-        }
-        
-        document.body.appendChild(toast);
-        
-        // 애니메이션
-        setTimeout(() => toast.style.opacity = '1', 100);
-        setTimeout(() => {
-            toast.style.opacity = '0';
-            setTimeout(() => document.body.removeChild(toast), 300);
-        }, CONFIG.UI.TOAST_DURATION);
-    }
-};
-
-// Google Apps Script API 통신 클래스
-class GoogleAppsScriptAPI {
-    static async request(action, data = {}) {
-        try {
-            Utils.debugLog('API Request:', { action, data });
+        function addResult(message, type = 'info') {
+            testCount++;
+            const resultsDiv = document.getElementById('results');
             
-            const requestData = {
-                action: action,
-                ...data
-            };
-            
-            const response = await fetch(CONFIG.API.APPS_SCRIPT_URL, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(requestData),
-                mode: 'cors'
-            });
-            
-            if (!response.ok) {
-                throw new Error(`HTTP Error: ${response.status} ${response.statusText}`);
+            if (testCount === 1) {
+                resultsDiv.textContent = '';
             }
             
-            const result = await response.json();
-            Utils.debugLog('API Response:', result);
+            const timestamp = new Date().toLocaleTimeString();
+            const colorClass = type === 'success' ? 'success-text' : 
+                              type === 'error' ? 'error-text' : 
+                              type === 'warning' ? 'warning-text' : 'info-text';
             
-            if (result.error) {
-                throw new Error(result.error);
-            }
-            
-            return result;
-        } catch (error) {
-            Utils.debugLog('API Error:', error);
-            throw error;
-        }
-    }
-    
-    // 연결 테스트
-    static async testConnection() {
-        try {
-            const result = await this.request('checkSystemStatus');
-            return { success: true, message: '연결 성공', data: result };
-        } catch (error) {
-            return { success: false, message: error.message };
-        }
-    }
-    
-    // 사용자 관련 API
-    static async getUsers() {
-        return await this.request('getUsers');
-    }
-    
-    static async addUser(userData) {
-        return await this.request('addUser', { userData });
-    }
-    
-    static async updateUser(userId, userData) {
-        return await this.request('updateUser', { userId, userData });
-    }
-    
-    static async deleteUser(userId) {
-        return await this.request('deleteUser', { userId });
-    }
-    
-    static async authenticate(username, password) {
-        return await this.request('authenticate', { username, password });
-    }
-    
-    // Missing Call 관련 API
-    static async getCalls(filters = {}) {
-        return await this.request('getCalls', { filters });
-    }
-    
-    static async updateCall(callId, updateData) {
-        return await this.request('updateCall', { callId, updateData });
-    }
-}
-
-// 전역 함수들
-window.CONFIG = CONFIG;
-window.Utils = Utils;
-window.GoogleAppsScriptAPI = GoogleAppsScriptAPI;
-    </script>
-
-    <script>
-        // 페이지 로드 시 설정 정보 표시
-        document.addEventListener('DOMContentLoaded', function() {
-            showConfigInfo();
-            
-            // 오늘 날짜를 기본값으로 설정
-            const today = new Date().toISOString().split('T')[0];
-            document.getElementById('dateInput').value = today;
-        });
-
-        function showConfigInfo() {
-            const configDiv = document.getElementById('configInfo');
-            configDiv.innerHTML = `
-                <strong>API 타입:</strong> ${CONFIG.API.API_TYPE}<br>
-                <strong>Apps Script URL:</strong><br>
-                <small style="word-break: break-all;">${CONFIG.API.APPS_SCRIPT_URL}</small><br>
-                <strong>스프레드시트 ID:</strong><br>
-                <small style="word-break: break-all;">${CONFIG.GOOGLE_SHEETS.TOURVIS_SPREADSHEET_ID}</small><br>
-                <strong>디버그 모드:</strong> ${CONFIG.ENVIRONMENT.DEBUG_MODE ? 'ON' : 'OFF'}
-            `;
+            resultsDiv.innerHTML += `<span class="${colorClass}">[${timestamp}] ${message}</span>\n\n`;
+            resultsDiv.scrollTop = resultsDiv.scrollHeight;
         }
 
-        function showResult(elementId, result, type = 'info') {
-            const element = document.getElementById(elementId);
-            const resultText = typeof result === 'object' ? JSON.stringify(result, null, 2) : result;
-            
-            element.innerHTML = `<div class="result-box ${type}">
-                ${resultText}
-            </div>`;
-        }
-
-        function showLoading(buttonId, text = '처리 중...') {
+        function setButtonState(buttonId, state) {
             const button = document.getElementById(buttonId);
-            button.disabled = true;
-            button.innerHTML = `<span class="loading"></span>${text}`;
-        }
-
-        function hideLoading(buttonId, originalText) {
-            const button = document.getElementById(buttonId);
-            button.disabled = false;
-            button.innerHTML = originalText;
-        }
-
-        async function testConnection() {
-            showLoading('testBtn');
+            button.className = `test-btn ${state}`;
+            button.disabled = state === 'loading';
             
-            try {
-                const result = await GoogleAppsScriptAPI.testConnection();
-                
-                if (result.success) {
-                    showResult('connectionResult', '✅ 연결 성공!\n\n' + JSON.stringify(result.data, null, 2), 'success');
-                    Utils.showToast('Google Apps Script 연결 성공!', 'success');
-                } else {
-                    showResult('connectionResult', '❌ 연결 실패\n\n' + result.message, 'error');
-                    Utils.showToast('연결 실패: ' + result.message, 'error');
+            if (state === 'loading') {
+                const originalText = button.textContent;
+                button.innerHTML = `<span class="loading"></span>테스트 중...`;
+                button.setAttribute('data-original', originalText);
+            } else {
+                const originalText = button.getAttribute('data-original');
+                if (originalText) {
+                    button.textContent = originalText;
                 }
-            } catch (error) {
-                showResult('connectionResult', '❌ 오류 발생\n\n' + error.message, 'error');
-                Utils.showToast('오류 발생: ' + error.message, 'error');
             }
-            
-            hideLoading('testBtn', '연결 테스트 실행');
         }
 
-        async function checkSystemStatus() {
-            showLoading('statusBtn');
-            
-            try {
-                const result = await GoogleAppsScriptAPI.request('checkSystemStatus');
-                
-                if (result.success) {
-                    const status = result.status;
-                    const statusText = `
-✅ 시스템 상태: 정상
-
-📊 상태 정보:
-- 스프레드시트 연결: ${status.spreadsheetConnected ? '✅ 성공' : '❌ 실패'}
-- 스프레드시트 이름: ${status.spreadsheetName || 'N/A'}
-- Users 시트: ${status.usersSheetExists ? '✅ 존재' : '❌ 없음'}
-- Calls 시트: ${status.callsSheetExists ? '✅ 존재' : '❌ 없음'}
-- 등록된 사용자 수: ${status.userCount}명
-- 시스템 버전: ${status.version}
-- 확인 시간: ${status.timestamp}
-                    `;
-                    
-                    showResult('statusResult', statusText, 'success');
-                    Utils.showToast('시스템 상태 확인 완료!', 'success');
-                } else {
-                    showResult('statusResult', '❌ 시스템 상태 확인 실패\n\n' + result.error, 'error');
-                    Utils.showToast('상태 확인 실패: ' + result.error, 'error');
-                }
-            } catch (error) {
-                showResult('statusResult', '❌ 오류 발생\n\n' + error.message, 'error');
-                Utils.showToast('오류 발생: ' + error.message, 'error');
-            }
-            
-            hideLoading('statusBtn', '시스템 상태 확인');
-        }
-
-        async function testGetUsers() {
-            showLoading('usersBtn');
-            
-            try {
-                const result = await GoogleAppsScriptAPI.getUsers();
-                
-                if (result.success) {
-                    const usersText = `
-✅ 사용자 조회 성공! (총 ${result.users.length}명)
-
-👥 사용자 목록:
-${result.users.map(user => `
-- ${user.name} (${user.username})
-  역할: ${user.role}
-  이메일: ${user.email}
-  생성일: ${user.createdAt}
-  마지막 로그인: ${user.lastLogin || '없음'}
-`).join('\n')}
-                    `;
-                    
-                    showResult('usersResult', usersText, 'success');
-                    Utils.showToast(`사용자 ${result.users.length}명 조회 완료!`, 'success');
-                } else {
-                    showResult('usersResult', '❌ 사용자 조회 실패\n\n' + result.error, 'error');
-                    Utils.showToast('사용자 조회 실패: ' + result.error, 'error');
-                }
-            } catch (error) {
-                showResult('usersResult', '❌ 오류 발생\n\n' + error.message, 'error');
-                Utils.showToast('오류 발생: ' + error.message, 'error');
-            }
-            
-            hideLoading('usersBtn', '사용자 목록 조회');
-        }
-
-        async function testGetCalls() {
-            const date = document.getElementById('dateInput').value;
-            if (!date) {
-                Utils.showToast('날짜를 선택해주세요', 'warning');
+        async function testGet() {
+            const url = getUrl();
+            if (!url) {
+                addResult('❌ URL을 입력해주세요', 'error');
                 return;
             }
-            
-            showLoading('callsBtn');
-            
-            try {
-                const result = await GoogleAppsScriptAPI.request('getCalls', { date });
-                
-                if (result.success) {
-                    const callsText = `
-✅ Missing Call 조회 성공! (${date})
-총 ${result.calls.length}건
 
-📞 Missing Call 목록:
-${result.calls.length > 0 ? result.calls.map(call => `
-- 전화번호: ${call.phoneNumber}
-  통화시간: ${call.startTime} ~ ${call.endTime} (${call.duration}초)
-  인입큐: ${call.queue}
-  미통화사유: ${call.reason}
-  처리상태: ${call.processStatus || '미처리'}
-  처리담당자: ${call.processManager || '없음'}
-  처리메모: ${call.processNote || '없음'}
-`).join('\n') : '해당 날짜에 Missing Call 데이터가 없습니다.'}
-                    `;
-                    
-                    showResult('callsResult', callsText, result.calls.length > 0 ? 'success' : 'info');
-                    Utils.showToast(`${date} Missing Call ${result.calls.length}건 조회 완료!`, 'success');
-                } else {
-                    showResult('callsResult', '❌ Missing Call 조회 실패\n\n' + result.error, 'error');
-                    Utils.showToast('데이터 조회 실패: ' + result.error, 'error');
+            setButtonState('getBtn', 'loading');
+
+            try {
+                addResult('🔄 GET 요청 시작...', 'info');
+                
+                const response = await fetch(url, {
+                    method: 'GET',
+                    mode: 'cors'
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
                 }
+
+                const data = await response.json();
+                
+                addResult(`✅ GET 요청 성공!
+응답 상태: ${response.status}
+응답 데이터: ${JSON.stringify(data, null, 2)}`, 'success');
+                
+                setButtonState('getBtn', 'success');
+
             } catch (error) {
-                showResult('callsResult', '❌ 오류 발생\n\n' + error.message, 'error');
-                Utils.showToast('오류 발생: ' + error.message, 'error');
+                addResult(`❌ GET 요청 실패: ${error.message}`, 'error');
+                setButtonState('getBtn', 'error');
             }
-            
-            hideLoading('callsBtn', '데이터 조회');
         }
+
+        async function testPost() {
+            const url = getUrl();
+            if (!url) {
+                addResult('❌ URL을 입력해주세요', 'error');
+                return;
+            }
+
+            setButtonState('postBtn', 'loading');
+
+            try {
+                addResult('🔄 POST 요청 시작...', 'info');
+                
+                const response = await fetch(url, {
+                    method: 'POST',
+                    mode: 'cors',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        action: 'test',
+                        message: 'CORS 테스트 성공!'
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+
+                const data = await response.json();
+                
+                addResult(`✅ POST 요청 성공!
+응답 상태: ${response.status}
+응답 데이터: ${JSON.stringify(data, null, 2)}`, 'success');
+                
+                setButtonState('postBtn', 'success');
+
+            } catch (error) {
+                addResult(`❌ POST 요청 실패: ${error.message}`, 'error');
+                setButtonState('postBtn', 'error');
+            }
+        }
+
+        async function testSystem() {
+            const url = getUrl();
+            if (!url) {
+                addResult('❌ URL을 입력해주세요', 'error');
+                return;
+            }
+
+            setButtonState('systemBtn', 'loading');
+
+            try {
+                addResult('🔄 시스템 상태 확인 중...', 'info');
+                
+                const response = await fetch(url, {
+                    method: 'POST',
+                    mode: 'cors',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        action: 'checkSystemStatus'
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+
+                const data = await response.json();
+                
+                if (data.success) {
+                    const status = data.status;
+                    addResult(`✅ 시스템 상태 확인 성공!
+- 스프레드시트 연결: ${status.spreadsheetConnected ? '✅' : '❌'}
+- 스프레드시트 이름: ${status.spreadsheetName}
+- Users 시트: ${status.usersSheetExists ? '✅' : '❌'}
+- 미싱콜 시트: ${status.callsSheetExists ? '✅' : '❌'}
+- 사용 가능한 시트: ${status.availableSheets?.join(', ')}
+- 확인 시간: ${status.timestamp}`, 'success');
+                    
+                    setButtonState('systemBtn', 'success');
+                } else {
+                    addResult(`⚠️ 시스템 상태 확인 실패: ${data.error}`, 'warning');
+                    setButtonState('systemBtn', 'error');
+                }
+
+            } catch (error) {
+                addResult(`❌ 시스템 상태 확인 오류: ${error.message}`, 'error');
+                setButtonState('systemBtn', 'error');
+            }
+        }
+
+        async function testUsers() {
+            const url = getUrl();
+            if (!url) {
+                addResult('❌ URL을 입력해주세요', 'error');
+                return;
+            }
+
+            setButtonState('usersBtn', 'loading');
+
+            try {
+                addResult('🔄 사용자 조회 중...', 'info');
+                
+                const response = await fetch(url, {
+                    method: 'POST',
+                    mode: 'cors',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        action: 'getUsers'
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+
+                const data = await response.json();
+                
+                if (data.success) {
+                    addResult(`✅ 사용자 조회 성공!
+총 사용자 수: ${data.users.length}명
+${data.users.map((user, index) => 
+`${index + 1}. ${user.name} (${user.username}) - ${user.role}`
+).join('\n')}`, 'success');
+                    
+                    setButtonState('usersBtn', 'success');
+                } else {
+                    addResult(`⚠️ 사용자 조회 실패: ${data.error}`, 'warning');
+                    setButtonState('usersBtn', 'error');
+                }
+
+            } catch (error) {
+                addResult(`❌ 사용자 조회 오류: ${error.message}`, 'error');
+                setButtonState('usersBtn', 'error');
+            }
+        }
+
+        async function testCalls() {
+            const url = getUrl();
+            if (!url) {
+                addResult('❌ URL을 입력해주세요', 'error');
+                return;
+            }
+
+            setButtonState('callsBtn', 'loading');
+
+            try {
+                const today = new Date().toISOString().split('T')[0];
+                addResult(`🔄 Missing Call 조회 중... (${today})`, 'info');
+                
+                const response = await fetch(url, {
+                    method: 'POST',
+                    mode: 'cors',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        action: 'getCalls',
+                        date: today
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+
+                const data = await response.json();
+                
+                if (data.success) {
+                    addResult(`✅ Missing Call 조회 성공!
+날짜: ${today}
+총 건수: ${data.calls.length}건
+${data.calls.length > 0 ? 
+    data.calls.slice(0, 3).map(call => 
+        `- ${call.phoneNumber} (${call.startTime}-${call.endTime})`
+    ).join('\n') + (data.calls.length > 3 ? '\n... 외 ' + (data.calls.length - 3) + '건' : '')
+    : '해당 날짜에 Missing Call 데이터가 없습니다.'
+}`, 'success');
+                    
+                    setButtonState('callsBtn', 'success');
+                } else {
+                    addResult(`⚠️ Missing Call 조회 실패: ${data.error}`, 'warning');
+                    setButtonState('callsBtn', 'error');
+                }
+
+            } catch (error) {
+                addResult(`❌ Missing Call 조회 오류: ${error.message}`, 'error');
+                setButtonState('callsBtn', 'error');
+            }
+        }
+
+        function clearResults() {
+            document.getElementById('results').innerHTML = `📋 결과가 지워졌습니다. 다시 테스트를 진행하세요.`;
+            testCount = 0;
+            
+            // 모든 버튼 상태 초기화
+            ['getBtn', 'postBtn', 'systemBtn', 'usersBtn', 'callsBtn'].forEach(buttonId => {
+                const button = document.getElementById(buttonId);
+                button.className = 'test-btn';
+                button.disabled = false;
+            });
+        }
+
+        // 페이지 로드 시 안내
+        window.addEventListener('load', function() {
+            addResult(`🎯 CORS 테스트 준비 완료
+
+다음 단계를 따라하세요:
+1. 새 Google Apps Script 프로젝트 생성
+2. 제공된 코드 붙여넣기
+3. "모든 사용자" 권한으로 웹앱 배포
+4. 새 URL을 위 입력란에 붙여넣기
+5. 1번부터 차례대로 테스트 진행
+
+💡 모든 테스트가 성공하면 CORS 문제가 완전히 해결됩니다!`, 'info');
+        });
     </script>
 </body>
 </html>
