@@ -59,9 +59,9 @@ const CONFIG = {
         REMEMBER_ME_DAYS: 7
     },
     
-    // API 설정
+    // API 설정 (실제 배포된 Apps Script URL 사용)
     API: {
-        // Google Apps Script 웹앱 URL
+        // Google Apps Script 웹앱 URL (실제 배포된 URL)
         APPS_SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbzGB1drhTBjQAIOmg02iRtQWPR4x2TFSta-7ha5LXdt-nQu4HQkU2P_qlpsoWJaHEo/exec',
         
         // 사용할 API 타입 ('sheets_api' 또는 'apps_script')
@@ -71,16 +71,7 @@ const CONFIG = {
         TIMEOUT: 30000,
         
         // 재시도 횟수
-        RETRY_COUNT: 3
-    },
-    
-    // API 설정
-    API: {
-        // Google Apps Script 웹앱 URL (배포 후 여기에 입력)
-        APPS_SCRIPT_URL: 'https://script.google.com/macros/s/YOUR_SCRIPT_ID/exec',
-        
-        // 사용할 API 타입 ('sheets_api' 또는 'apps_script')
-        API_TYPE: 'apps_script',
+        RETRY_COUNT: 3,
         
         // 엔드포인트 설정
         ENDPOINTS: {
@@ -89,7 +80,8 @@ const CONFIG = {
             UPDATE_USER: '/users',
             DELETE_USER: '/users',
             GET_CALLS: '/calls',
-            UPDATE_CALL: '/calls'
+            UPDATE_CALL: '/calls',
+            TEST_CONNECTION: '/test'
         }
     },
     
@@ -171,6 +163,48 @@ const Utils = {
         if (CONFIG.ENVIRONMENT.DEBUG_MODE) {
             console.log('[DEBUG]', new Date().toISOString(), ...args);
         }
+    },
+    
+    // Toast 메시지 표시
+    showToast(message, type = 'info') {
+        const toast = document.createElement('div');
+        toast.className = `toast toast-${type}`;
+        toast.textContent = message;
+        toast.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 12px 24px;
+            border-radius: 4px;
+            color: white;
+            font-weight: 500;
+            z-index: 9999;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        `;
+        
+        switch(type) {
+            case 'success':
+                toast.style.backgroundColor = '#10b981';
+                break;
+            case 'error':
+                toast.style.backgroundColor = '#ef4444';
+                break;
+            case 'warning':
+                toast.style.backgroundColor = '#f59e0b';
+                break;
+            default:
+                toast.style.backgroundColor = '#3b82f6';
+        }
+        
+        document.body.appendChild(toast);
+        
+        // 애니메이션
+        setTimeout(() => toast.style.opacity = '1', 100);
+        setTimeout(() => {
+            toast.style.opacity = '0';
+            setTimeout(() => document.body.removeChild(toast), 300);
+        }, CONFIG.UI.TOAST_DURATION);
     }
 };
 
@@ -245,7 +279,86 @@ class SessionManager {
     }
 }
 
-// Google Sheets API 통신 클래스
+// Google Apps Script API 통신 클래스
+class GoogleAppsScriptAPI {
+    static async request(action, data = {}) {
+        try {
+            Utils.debugLog('API Request:', { action, data });
+            
+            const requestData = {
+                action: action,
+                ...data
+            };
+            
+            const response = await fetch(CONFIG.API.APPS_SCRIPT_URL, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(requestData),
+                mode: 'cors'
+            });
+            
+            if (!response.ok) {
+                throw new Error(`HTTP Error: ${response.status} ${response.statusText}`);
+            }
+            
+            const result = await response.json();
+            Utils.debugLog('API Response:', result);
+            
+            if (result.error) {
+                throw new Error(result.error);
+            }
+            
+            return result;
+        } catch (error) {
+            Utils.debugLog('API Error:', error);
+            throw error;
+        }
+    }
+    
+    // 연결 테스트
+    static async testConnection() {
+        try {
+            const result = await this.request('checkSystemStatus');
+            return { success: true, message: '연결 성공', data: result };
+        } catch (error) {
+            return { success: false, message: error.message };
+        }
+    }
+    
+    // 사용자 관련 API
+    static async getUsers() {
+        return await this.request('getUsers');
+    }
+    
+    static async addUser(userData) {
+        return await this.request('addUser', { userData });
+    }
+    
+    static async updateUser(userId, userData) {
+        return await this.request('updateUser', { userId, userData });
+    }
+    
+    static async deleteUser(userId) {
+        return await this.request('deleteUser', { userId });
+    }
+    
+    static async authenticate(username, password) {
+        return await this.request('authenticate', { username, password });
+    }
+    
+    // Missing Call 관련 API
+    static async getCalls(filters = {}) {
+        return await this.request('getCalls', { filters });
+    }
+    
+    static async updateCall(callId, updateData) {
+        return await this.request('updateCall', { callId, updateData });
+    }
+}
+
+// Google Sheets API 통신 클래스 (백업용)
 class GoogleSheetsAPI {
     static async readSheet(spreadsheetId, range) {
         try {
@@ -263,32 +376,40 @@ class GoogleSheetsAPI {
             throw error;
         }
     }
-    
-    static async appendRow(spreadsheetId, range, values) {
-        try {
-            // Google Sheets API는 읽기 전용이므로 실제로는 업데이트할 수 없습니다.
-            // 실제 구현에서는 Google Apps Script나 서버가 필요합니다.
-            Utils.debugLog('Append row request:', { spreadsheetId, range, values });
+}
+
+// 연결 테스트 함수 (전역 함수로 정의)
+async function testConnection() {
+    try {
+        Utils.showToast('연결 테스트 중...', 'info');
+        
+        if (CONFIG.API.API_TYPE === 'apps_script') {
+            const result = await GoogleAppsScriptAPI.testConnection();
             
-            // Mock 응답 (실제 구현 필요)
-            return { success: true, updatedRows: 1 };
-        } catch (error) {
-            Utils.debugLog('Error appending row:', error);
-            throw error;
-        }
-    }
-    
-    static async updateRow(spreadsheetId, range, values) {
-        try {
-            // Google Sheets API는 읽기 전용이므로 실제로는 업데이트할 수 없습니다.
-            Utils.debugLog('Update row request:', { spreadsheetId, range, values });
+            if (result.success) {
+                Utils.showToast('✅ 연결 성공!', 'success');
+                Utils.debugLog('Connection test successful:', result);
+            } else {
+                Utils.showToast('❌ 연결 실패: ' + result.message, 'error');
+                Utils.debugLog('Connection test failed:', result);
+            }
             
-            // Mock 응답 (실제 구현 필요)
-            return { success: true, updatedCells: values.length };
-        } catch (error) {
-            Utils.debugLog('Error updating row:', error);
-            throw error;
+            return result;
+        } else {
+            // Google Sheets API 테스트
+            await GoogleSheetsAPI.readSheet(
+                CONFIG.GOOGLE_SHEETS.TOURVIS_SPREADSHEET_ID,
+                CONFIG.GOOGLE_SHEETS.TOURVIS_WORKSHEET_NAME + '!A1:B1'
+            );
+            
+            Utils.showToast('✅ Google Sheets 연결 성공!', 'success');
+            return { success: true, message: 'Google Sheets 연결 성공' };
         }
+    } catch (error) {
+        const errorMessage = error.message || '알 수 없는 오류';
+        Utils.showToast('❌ 연결 실패: ' + errorMessage, 'error');
+        Utils.debugLog('Connection test error:', error);
+        return { success: false, message: errorMessage };
     }
 }
 
@@ -296,15 +417,15 @@ class GoogleSheetsAPI {
 function validateConfig() {
     const errors = [];
     
-    // Apps Script 사용시에는 API Key가 필요없음
+    // Apps Script 사용시에는 URL 확인
     if (CONFIG.API.API_TYPE === 'apps_script') {
-        // Apps Script URL 확인
-        if (!CONFIG.API.APPS_SCRIPT_URL || CONFIG.API.APPS_SCRIPT_URL === 'https://script.google.com/macros/s/YOUR_SCRIPT_ID/exec') {
+        if (!CONFIG.API.APPS_SCRIPT_URL) {
             errors.push('Google Apps Script URL이 설정되지 않았습니다.');
         }
     } else {
         // Google Sheets API 사용시에만 API Key 확인
-        if (!CONFIG.GOOGLE_SHEETS.API_KEY || CONFIG.GOOGLE_SHEETS.API_KEY === 'YOUR_GOOGLE_SHEETS_API_KEY_HERE') {
+        if (!CONFIG.GOOGLE_SHEETS.API_KEY || 
+            CONFIG.GOOGLE_SHEETS.API_KEY === 'YOUR_GOOGLE_SHEETS_API_KEY_HERE') {
             errors.push('Google Sheets API Key가 설정되지 않았습니다.');
         }
     }
@@ -322,9 +443,31 @@ function validateConfig() {
     return true;
 }
 
+// 초기화 함수
+function initializeApp() {
+    Utils.debugLog('Initializing Tourvis Missing Call System...');
+    
+    // 설정 검증
+    validateConfig();
+    
+    // 세션 확인
+    const currentUser = SessionManager.getCurrentUser();
+    if (currentUser) {
+        Utils.debugLog('Current user session:', currentUser.username);
+    }
+    
+    Utils.debugLog('App initialization complete');
+}
+
+// DOM 로드 후 초기화
+document.addEventListener('DOMContentLoaded', initializeApp);
+
 // 전역 객체로 내보내기
 window.CONFIG = CONFIG;
 window.Utils = Utils;
 window.SessionManager = SessionManager;
+window.GoogleAppsScriptAPI = GoogleAppsScriptAPI;
 window.GoogleSheetsAPI = GoogleSheetsAPI;
+window.testConnection = testConnection;
 window.validateConfig = validateConfig;
+window.initializeApp = initializeApp;
