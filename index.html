@@ -85,6 +85,7 @@
             <div class="nav-buttons">
                 <button class="nav-btn active" onclick="showSection('dashboard')">📊 대시보드</button>
                 <button class="nav-btn hidden" onclick="showSection('users')" id="usersMenuBtn">👥 사용자 관리</button>
+                <button class="nav-btn hidden" onclick="showSection('requests')" id="requestsMenuBtn">📋 계정 신청 관리</button>
             </div>
         </div>
 
@@ -178,6 +179,7 @@
                                 <th>실명</th>
                                 <th>이메일</th>
                                 <th>권한</th>
+                                <th>상태</th>
                                 <th>등록일</th>
                                 <th>마지막 로그인</th>
                                 <th>액션</th>
@@ -185,6 +187,42 @@
                         </thead>
                         <tbody></tbody>
                     </table>
+                </div>
+            </div>
+
+            <!-- 계정 신청 관리 섹션 -->
+            <div id="requestsSection" class="section">
+                <div class="section-header">
+                    <h2>계정 신청 관리</h2>
+                    <button class="btn btn-secondary" onclick="loadRequestsSection()">🔄 새로고침</button>
+                </div>
+
+                <div id="requestsLoading" class="loading hidden">
+                    계정 신청 목록을 불러오고 있습니다<span class="spinner"></span>
+                </div>
+
+                <div id="requestsResults" class="table-container">
+                    <table id="requestsTable">
+                        <thead>
+                            <tr>
+                                <th>신청일</th>
+                                <th>신청자</th>
+                                <th>이메일</th>
+                                <th>연락처</th>
+                                <th>부서/팀</th>
+                                <th>요청 권한</th>
+                                <th>희망 ID</th>
+                                <th>상태</th>
+                                <th>액션</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+
+                <div id="noRequestsMessage" class="text-center hidden" style="padding: 40px; color: #666;">
+                    <h3>📭 대기 중인 계정 신청이 없습니다</h3>
+                    <p>새로운 신청이 접수되면 여기에 표시됩니다.</p>
                 </div>
             </div>
         </div>
@@ -241,6 +279,52 @@
                 <button type="button" class="btn btn-secondary" onclick="closeUserModal()">취소</button>
                 <button type="button" class="btn btn-success" onclick="saveUser()">
                     <span id="userSaveBtnText">💾 저장</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 계정 신청 승인 모달 -->
+    <div id="approvalModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>✅ 계정 신청 승인</h3>
+                <p style="color: #666; margin: 5px 0 0 0;">
+                    신청자: <span id="approvalRequestName" class="font-bold"></span><br>
+                    <span id="approvalRequestInfo" style="font-size: 0.9rem;"></span>
+                </p>
+            </div>
+            
+            <form id="approvalForm">
+                <input type="hidden" id="approvalRequestId">
+                
+                <div class="form-group">
+                    <label for="approvalUsername">사용자 ID *</label>
+                    <input type="text" id="approvalUsername" required placeholder="영문/숫자로 입력하세요">
+                    <small class="text-small">신청자가 요청한 ID를 수정할 수 있습니다.</small>
+                </div>
+                
+                <div class="form-group">
+                    <label for="approvalPassword">임시 비밀번호 *</label>
+                    <div class="password-container">
+                        <input type="password" id="approvalPassword" required placeholder="6자 이상 입력하세요">
+                        <button type="button" class="password-toggle" onclick="togglePassword('approvalPassword')">👁️</button>
+                    </div>
+                    <small class="text-small">사용자가 첫 로그인 후 변경하도록 안내하세요.</small>
+                </div>
+                
+                <div class="form-group">
+                    <label for="approvalNote">승인 메모 (선택)</label>
+                    <textarea id="approvalNote" rows="2" placeholder="승인 시 특이사항이나 전달 메시지"></textarea>
+                </div>
+            </form>
+
+            <div id="approvalModalError" class="alert alert-error hidden"></div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="closeApprovalModal()">취소</button>
+                <button type="button" class="btn btn-success" onclick="approveAccountRequest()">
+                    <span id="approvalSaveBtnText">✅ 승인 및 계정 생성</span>
                 </button>
             </div>
         </div>
@@ -368,6 +452,7 @@
         let currentUser = null;
         let currentCallsData = [];
         let currentUsersData = [];
+        let currentRequestsData = [];
         let currentProcessingCall = null;
         let connectionCheckInterval = null;
 
@@ -522,6 +607,12 @@
                 submitAccountRequest();
             });
 
+            // 승인 폼
+            document.getElementById('approvalForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                approveAccountRequest();
+            });
+
             // Enter 키 처리
             document.addEventListener('keydown', function(e) {
                 if (e.key === 'Enter') {
@@ -621,10 +712,14 @@
             
             // 권한에 따른 메뉴 표시
             const usersMenuBtn = document.getElementById('usersMenuBtn');
+            const requestsMenuBtn = document.getElementById('requestsMenuBtn');
+            
             if (SessionManager.hasRole('manager')) {
                 usersMenuBtn.classList.remove('hidden');
+                requestsMenuBtn.classList.remove('hidden');
             } else {
                 usersMenuBtn.classList.add('hidden');
+                requestsMenuBtn.classList.add('hidden');
             }
 
             // 화면 전환
@@ -652,6 +747,7 @@
                     // 데이터 초기화
                     currentCallsData = [];
                     currentUsersData = [];
+                    currentRequestsData = [];
                     currentProcessingCall = null;
                     
                     // 로그인 화면으로 이동
@@ -698,6 +794,8 @@
             // 섹션별 초기 로딩
             if (sectionName === 'users' && SessionManager.hasRole('manager')) {
                 loadUsersSection();
+            } else if (sectionName === 'requests' && SessionManager.hasRole('manager')) {
+                loadRequestsSection();
             }
         }
 
@@ -715,7 +813,8 @@
                 const result = await GoogleAppsScriptAPI.getUsers();
                 
                 if (result.success) {
-                    currentUsersData = result.users || [];
+                    // 승인된 사용자만 표시
+                    currentUsersData = result.users.filter(u => u.status === 'approved') || [];
                     displayUsersResults(currentUsersData);
                 } else {
                     throw new Error(result.error || '사용자 목록을 불러올 수 없습니다');
@@ -730,6 +829,182 @@
             }
         }
 
+        // 계정 신청 관리 섹션 로딩
+        async function loadRequestsSection() {
+            if (!SessionManager.hasRole('manager')) {
+                alert('❌ 권한이 없습니다.');
+                return;
+            }
+
+            try {
+                showLoading('requestsLoading');
+                
+                const result = await GoogleAppsScriptAPI.getPendingRequests();
+                
+                if (result.success) {
+                    currentRequestsData = result.requests || [];
+                    displayRequestsResults(currentRequestsData);
+                } else {
+                    throw new Error(result.error || '신청 목록을 불러올 수 없습니다');
+                }
+                
+                hideLoading('requestsLoading');
+                
+            } catch (error) {
+                Utils.debugLog('신청 섹션 로딩 오류:', error);
+                hideLoading('requestsLoading');
+                alert('❌ 신청 목록을 불러오는 중 오류가 발생했습니다: ' + error.message);
+            }
+        }
+
+        // 계정 신청 목록 결과 표시
+        function displayRequestsResults(requests) {
+            const tbody = document.querySelector('#requestsTable tbody');
+            const noRequestsMsg = document.getElementById('noRequestsMessage');
+            
+            tbody.innerHTML = '';
+
+            if (requests.length === 0) {
+                showElement('noRequestsMessage');
+                return;
+            }
+
+            hideElement('noRequestsMessage');
+
+            requests.forEach((request, index) => {
+                const row = tbody.insertRow();
+                row.innerHTML = `
+                    <td class="time-display">${request.requestDate}</td>
+                    <td>${request.name}</td>
+                    <td>${request.email}</td>
+                    <td>${request.phone}</td>
+                    <td>${request.department}</td>
+                    <td><span class="status-badge status-${request.role}">${getRoleDisplayName(request.role)}</span></td>
+                    <td class="phone-number">${request.requestedUsername || '자동 생성'}</td>
+                    <td><span class="status-badge status-pending">⏳ 대기중</span></td>
+                    <td style="white-space: nowrap;">
+                        <button class="btn btn-success btn-small" onclick="openApprovalModal(${index})" style="margin-right: 5px;">
+                            ✅ 승인
+                        </button>
+                        <button class="btn btn-danger btn-small" onclick="rejectRequest(${index})">
+                            ❌ 거부
+                        </button>
+                    </td>
+                `;
+            });
+        }
+
+        // 계정 신청 승인 모달 열기
+        function openApprovalModal(index) {
+            const request = currentRequestsData[index];
+            
+            document.getElementById('approvalRequestId').value = request.id;
+            document.getElementById('approvalRequestName').textContent = request.name;
+            document.getElementById('approvalRequestInfo').textContent = 
+                `${request.email} | ${request.department} | ${getRoleDisplayName(request.role)}`;
+            
+            // 희망 사용자 ID가 있으면 미리 채워넣기
+            document.getElementById('approvalUsername').value = request.requestedUsername || '';
+            document.getElementById('approvalPassword').value = '';
+            document.getElementById('approvalNote').value = '';
+
+            hideAlert('approvalModalError');
+            document.getElementById('approvalModal').classList.add('show');
+            
+            setTimeout(() => {
+                const usernameField = document.getElementById('approvalUsername');
+                if (usernameField.value) {
+                    document.getElementById('approvalPassword').focus();
+                } else {
+                    usernameField.focus();
+                }
+            }, 100);
+        }
+
+        // 승인 모달 닫기
+        function closeApprovalModal() {
+            closeModal('approvalModal');
+            hideAlert('approvalModalError');
+        }
+
+        // 계정 신청 승인 처리
+        async function approveAccountRequest() {
+            const requestId = document.getElementById('approvalRequestId').value;
+            const username = document.getElementById('approvalUsername').value.trim();
+            const password = document.getElementById('approvalPassword').value;
+            const note = document.getElementById('approvalNote').value.trim();
+
+            if (!username || !password) {
+                showAlert('approvalModalError', '사용자 ID와 임시 비밀번호를 모두 입력해주세요.', 'error');
+                return;
+            }
+
+            const passwordValidation = Utils.isValidPassword(password);
+            if (!passwordValidation.valid) {
+                showAlert('approvalModalError', passwordValidation.message, 'error');
+                return;
+            }
+
+            try {
+                // 버튼 상태 변경
+                const approveBtn = document.querySelector('#approvalModal .btn-success');
+                const btnText = document.getElementById('approvalSaveBtnText');
+                approveBtn.disabled = true;
+                btnText.textContent = '승인 처리 중...';
+
+                const approvalData = {
+                    username: username,
+                    password: password,
+                    note: note
+                };
+
+                const result = await GoogleAppsScriptAPI.approveRequest(requestId, approvalData);
+
+                if (result.success) {
+                    closeApprovalModal();
+                    await loadRequestsSection(); // 목록 새로고침
+                    
+                    alert(`✅ 계정이 승인되어 생성되었습니다!\n\n👤 사용자: ${result.user.name}\n🆔 사용자 ID: ${result.user.username}\n📧 이메일: ${result.user.email}\n\n💡 생성된 임시 비밀번호를 사용자에게 전달해주세요.`);
+                } else {
+                    showAlert('approvalModalError', result.error || '승인 처리 중 오류가 발생했습니다.', 'error');
+                }
+
+            } catch (error) {
+                Utils.debugLog('승인 처리 오류:', error);
+                showAlert('approvalModalError', '승인 처리 중 오류가 발생했습니다: ' + error.message, 'error');
+            } finally {
+                // 버튼 복원
+                const approveBtn = document.querySelector('#approvalModal .btn-success');
+                const btnText = document.getElementById('approvalSaveBtnText');
+                approveBtn.disabled = false;
+                btnText.textContent = '✅ 승인 및 계정 생성';
+            }
+        }
+
+        // 계정 신청 거부
+        async function rejectRequest(index) {
+            const request = currentRequestsData[index];
+            
+            const reason = prompt(`⚠️ 계정 신청을 거부하시겠습니까?\n\n신청자: ${request.name}\n이메일: ${request.email}\n\n거부 사유를 입력해주세요 (선택사항):`);
+            
+            if (reason === null) return; // 취소한 경우
+
+            try {
+                const result = await GoogleAppsScriptAPI.rejectRequest(request.id, reason);
+
+                if (result.success) {
+                    await loadRequestsSection(); // 목록 새로고침
+                    alert(`❌ 계정 신청이 거부되었습니다.\n\n신청자: ${request.name}\n사유: ${reason || '사유 없음'}`);
+                } else {
+                    alert('❌ 거부 처리 중 오류가 발생했습니다: ' + result.error);
+                }
+
+            } catch (error) {
+                Utils.debugLog('거부 처리 오류:', error);
+                alert('❌ 거부 처리 중 오류가 발생했습니다: ' + error.message);
+            }
+        }
+
         // 사용자 목록 결과 표시
         function displayUsersResults(users) {
             const tbody = document.querySelector('#usersTable tbody');
@@ -738,7 +1013,7 @@
             if (users.length === 0) {
                 const row = tbody.insertRow();
                 row.innerHTML = `
-                    <td colspan="7" class="text-center" style="padding: 40px; color: #666;">
+                    <td colspan="8" class="text-center" style="padding: 40px; color: #666;">
                         👥 등록된 사용자가 없습니다.
                     </td>
                 `;
@@ -747,11 +1022,15 @@
 
             users.forEach((user, index) => {
                 const row = tbody.insertRow();
+                const statusClass = user.status === 'approved' ? 'status-processed' : 'status-pending';
+                const statusText = user.status === 'approved' ? '✅ 활성' : '⏳ 대기중';
+                
                 row.innerHTML = `
                     <td class="phone-number">${user.username}</td>
                     <td>${user.name}</td>
                     <td>${user.email}</td>
                     <td><span class="status-badge status-${user.role}">${getRoleDisplayName(user.role)}</span></td>
+                    <td><span class="status-badge ${statusClass}">${statusText}</span></td>
                     <td class="time-display">${user.createdAt || '-'}</td>
                     <td class="time-display">${user.lastLogin || '-'}</td>
                     <td style="white-space: nowrap;">
@@ -891,6 +1170,7 @@
                     name: name,
                     email: email,
                     role: role,
+                    status: 'approved', // 관리자가 직접 생성하는 경우는 바로 승인
                     createdAt: isEdit ? null : Utils.getCurrentDateTime(),
                     lastLogin: isEdit ? null : null
                 };
@@ -1306,7 +1586,7 @@
             closeModal('accountRequestModal');
         }
 
-        // 계정 신청서 제출
+        // 계정 신청서 제출 (스프레드시트에 저장)
         async function submitAccountRequest() {
             const formData = {
                 name: document.getElementById('requestName').value.trim(),
@@ -1343,56 +1623,29 @@
                 const submitBtn = document.querySelector('#accountRequestModal .btn-primary');
                 const btnText = document.getElementById('accountRequestBtnText');
                 submitBtn.disabled = true;
-                btnText.textContent = '📧 전송 중...';
+                btnText.textContent = '📧 제출 중...';
 
                 // 현재 날짜/시간 추가
                 formData.requestDate = new Date().toLocaleString('ko-KR');
                 
-                // Apps Script를 통한 이메일 발송
-                const result = await GoogleAppsScriptAPI.request('sendAccountRequest', formData);
+                // Apps Script를 통한 스프레드시트 저장
+                const result = await GoogleAppsScriptAPI.submitAccountRequest(formData);
 
                 if (result.success) {
                     showAlert('accountRequestSuccess', 
-                        '✅ 계정 신청이 완료되었습니다!\n관리자 검토 후 연락드리겠습니다.', 'success');
+                        '✅ 계정 신청이 완료되었습니다!\n관리자 검토 후 승인됩니다.', 'success');
                     
                     // 3초 후 모달 닫기
                     setTimeout(() => {
                         closeAccountRequestModal();
                     }, 3000);
                 } else {
-                    throw new Error(result.error || '신청서 전송에 실패했습니다.');
+                    throw new Error(result.error || '신청서 제출에 실패했습니다.');
                 }
 
             } catch (error) {
                 Utils.debugLog('계정 신청 오류:', error);
-                
-                // 직접 이메일 클라이언트 열기 (백업 방안)
-                const emailSubject = encodeURIComponent('투어비스 시스템 계정 신청');
-                const emailBody = encodeURIComponent(`
-계정 신청 정보:
-
-• 성명: ${formData.name}
-• 이메일: ${formData.email}
-• 연락처: ${formData.phone}
-• 부서/팀: ${formData.department}
-• 직급/직책: ${formData.position || '미입력'}
-• 요청 권한: ${formData.role === 'user' ? '일반 사용자' : '관리자'}
-• 희망 사용자 ID: ${formData.userId || '자동 생성 요청'}
-• 신청 사유: ${formData.reason}
-• 신청 일시: ${formData.requestDate}
-
-감사합니다.
-                `);
-                
-                const mailtoLink = `mailto:kyh@tidesquare.com?subject=${emailSubject}&body=${emailBody}`;
-                
-                if (confirm('❌ 자동 전송에 실패했습니다.\n이메일 클라이언트를 열어서 직접 전송하시겠습니까?')) {
-                    window.location.href = mailtoLink;
-                    showAlert('accountRequestSuccess', 
-                        '📧 이메일 클라이언트가 열렸습니다.\n신청 내용을 확인 후 전송해주세요.', 'info');
-                } else {
-                    showAlert('accountRequestError', `전송 실패: ${error.message}`, 'error');
-                }
+                showAlert('accountRequestError', `제출 실패: ${error.message}`, 'error');
 
             } finally {
                 // 버튼 복원
