@@ -1,0 +1,809 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>투어비스 항공(국제선) Missing Call 처리 대시보드</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            font-weight: 300;
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .content {
+            padding: 30px;
+        }
+
+        .search-section {
+            background: #f8f9ff;
+            padding: 25px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+            border: 2px solid #e0e7ff;
+        }
+
+        .search-form {
+            display: flex;
+            gap: 15px;
+            align-items: end;
+            flex-wrap: wrap;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .form-group label {
+            font-weight: 600;
+            color: #374151;
+            font-size: 0.95rem;
+        }
+
+        .form-group input {
+            padding: 12px 15px;
+            border: 2px solid #d1d5db;
+            border-radius: 10px;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            background: white;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .btn {
+            padding: 12px 25px;
+            border: none;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+        }
+
+        .btn-success:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(16, 185, 129, 0.3);
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #6b7280;
+            font-size: 1.1rem;
+        }
+
+        .loading::after {
+            content: '';
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f4f6;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-left: 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .results-section {
+            background: white;
+            border-radius: 15px;
+            border: 2px solid #e5e7eb;
+            overflow: hidden;
+        }
+
+        .results-header {
+            background: #f9fafb;
+            padding: 20px;
+            border-bottom: 2px solid #e5e7eb;
+        }
+
+        .results-header h3 {
+            color: #374151;
+            font-size: 1.3rem;
+            margin-bottom: 5px;
+        }
+
+        .results-count {
+            color: #6b7280;
+            font-size: 0.95rem;
+        }
+
+        .table-container {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+        }
+
+        th, td {
+            padding: 15px 12px;
+            text-align: left;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        th {
+            background: #f8fafc;
+            font-weight: 600;
+            color: #374151;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        td {
+            font-size: 0.95rem;
+            color: #4b5563;
+        }
+
+        .call-count {
+            background: #fef3c7;
+            color: #92400e;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            text-align: center;
+            min-width: 60px;
+            display: inline-block;
+        }
+
+        .status-processed {
+            background: #d1fae5;
+            color: #065f46;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            text-align: center;
+        }
+
+        .status-pending {
+            background: #fee2e2;
+            color: #991b1b;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            text-align: center;
+        }
+
+        .action-cell {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .btn-small {
+            padding: 6px 12px;
+            font-size: 0.85rem;
+            border-radius: 6px;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 1000;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .modal.show {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.3);
+            max-width: 500px;
+            width: 90%;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes slideIn {
+            from { transform: translateY(-50px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        .modal-header {
+            margin-bottom: 25px;
+        }
+
+        .modal-header h3 {
+            color: #374151;
+            font-size: 1.4rem;
+            margin-bottom: 5px;
+        }
+
+        .modal-body {
+            margin-bottom: 25px;
+        }
+
+        .modal-footer {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+        }
+
+        .btn-secondary {
+            background: #6b7280;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #4b5563;
+        }
+
+        .error {
+            background: #fef2f2;
+            color: #dc2626;
+            padding: 15px;
+            border-radius: 10px;
+            border: 1px solid #fecaca;
+            margin: 20px 0;
+        }
+
+        .success {
+            background: #f0fdf4;
+            color: #166534;
+            padding: 15px;
+            border-radius: 10px;
+            border: 1px solid #bbf7d0;
+            margin: 20px 0;
+        }
+
+        .phone-number {
+            font-family: 'Courier New', monospace;
+            font-weight: 600;
+            color: #1f2937;
+        }
+
+        .time-display {
+            font-family: 'Courier New', monospace;
+            color: #4b5563;
+        }
+
+        @media (max-width: 768px) {
+            .search-form {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .form-group {
+                width: 100%;
+            }
+            
+            .table-container {
+                font-size: 0.85rem;
+            }
+            
+            th, td {
+                padding: 10px 8px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>투어비스 항공(국제선)</h1>
+            <p>Missing Call 처리 대시보드</p>
+        </div>
+        
+        <div class="content">
+            <div class="search-section">
+                <div class="search-form">
+                    <div class="form-group">
+                        <label for="searchDate">조회 일자</label>
+                        <input type="date" id="searchDate" value="">
+                    </div>
+                    <div class="form-group">
+                        <button type="button" class="btn btn-primary" onclick="searchCalls()">
+                            조회
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="loadingMessage" class="loading" style="display: none;">
+                데이터를 조회하고 있습니다...
+            </div>
+
+            <div id="errorMessage" class="error" style="display: none;"></div>
+            <div id="successMessage" class="success" style="display: none;"></div>
+
+            <div id="resultsSection" class="results-section" style="display: none;">
+                <div class="results-header">
+                    <h3>조회 결과</h3>
+                    <div class="results-count" id="resultsCount">총 0건</div>
+                </div>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>발생일</th>
+                                <th>콜인입시간</th>
+                                <th>대기시간(분)</th>
+                                <th>전화번호</th>
+                                <th>인입큐</th>
+                                <th>중복횟수</th>
+                                <th>처리상태</th>
+                                <th>처리담당자</th>
+                                <th>액션</th>
+                            </tr>
+                        </thead>
+                        <tbody id="resultsTable">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- OB콜 처리 모달 -->
+    <div id="processModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>OB콜 처리</h3>
+                <p>전화번호: <span id="modalPhoneNumber" class="phone-number"></span></p>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="processStatus">처리 여부</label>
+                    <select id="processStatus" class="form-group input" style="padding: 12px 15px; border: 2px solid #d1d5db; border-radius: 10px; font-size: 1rem; background: white;">
+                        <option value="">선택해주세요</option>
+                        <option value="완료">완료</option>
+                        <option value="미완료">미완료</option>
+                        <option value="보류">보류</option>
+                    </select>
+                </div>
+                <div class="form-group" style="margin-top: 15px;">
+                    <label for="processManager">처리담당자</label>
+                    <input type="text" id="processManager" class="form-group input" placeholder="담당자명을 입력하세요" style="padding: 12px 15px; border: 2px solid #d1d5db; border-radius: 10px; font-size: 1rem; background: white; width: 100%;">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="closeModal()">취소</button>
+                <button type="button" class="btn btn-success" onclick="saveProcess()">저장</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 구글 스프레드시트 설정
+        const SPREADSHEET_ID = '15Pyx-yh-G8OmQPhAc7DVze6Yl6drTXf3wKIr1dB1cfE';
+        const API_KEY = 'AIzaSyB-your-api-key'; // 실제 API 키가 필요합니다
+        
+        // 서비스 계정 정보 (실제 운영환경에서는 백엔드에서 처리해야 합니다)
+        const SERVICE_ACCOUNT = {
+            "type": "service_account",
+            "project_id": "amex-449014",
+            "private_key_id": "aa4ca7dcbcf6828d99f1f0ec23c675a19bac4ac8",
+            "private_key": "-----BEGIN PRIVATE KEY-----\\nMIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQDIHa4r+wnfM9cB\\nV2r1lYrVWY97takcQJZVankguoLstmL3//mOYqlbbxQ2+WaJD2WdBjLcYtSJ/VaP\\n/cYpuvbtRCxXgjh15FRSIhcbXjonxsWI4E8J1RSejDI8PiyDcCofDkPgdFLho908\\nqbRNwqwUejWB2uNHY5mXz8u6KUiVuGBN7JUHQSxwOo+jYP23NhYRcAiiC8xAZUcC\\nJM8w4KegDdv7TvmNA/NJUXoxpkTLZ/UGDvxld7CXeEWyoWdj1A33CQRUoxI/KZNe\\naApG2EPGkopyJ8rwDyzWfOre2ZNF+MeV3Ggo07j7TMk4tFsRnijCB9w8vZEV1A5w\\nnrABZ8GdAgMBAAECggEAAMi2UYxCrQH2OIVKl58gmhanTo804OkGZ1veMyftP1LG\\nJI7MwBIHOE2FaKd2oGmTzBtlrUhegps5223VAUqEVVlxhyocA0DmIFdRyNtMfG5G\\ns+qu7jEZF/Mg/+xsb8Gpcab4sGASKdvRqba/kLqPsW8cvbBFBX1qLM4O2LZwXHaZ\\nuXDPEu/QrCIhLvhil3cDTlkDCdzURDf/NQTHI53NmEadGwthYiAyILE/duy6RCiC\\n83b9bI5qgHWT/rtJxjTkPDdXbEWB726qSjiV2wgAha2OFCo6JWNcCwfIq1NbbdFq\\nND51/F2smSUqdHyNphIOetyG2294arBZGP1gqxYunwKBgQDnhnLT/9+hRIOjFsC/\\nS8wdqF9Zgsp5I/eCJsMHAl3pcqUbRQU/s3lQ+ulActKvaCAtXFJAfMXmms2NPReW\\n7dD7r+ssWaGxKrHYezTmAcswLLweDPoqVIu/RyWznSd4w57Fk/ZCF7+pvrrgyOEQ\\nlJT4W3CwZFamXAHDah+/OC+KVwKBgQDdRTt+FWqj+zlzHPVcPzVbYv+unaRunTaK\\ntywNP0jwJhbZlFZCu9FvZ2PZMf1NDUsglkmwkDgpbQRlzAeILsJ013DjofEN/Sua\\nO35OfknoWbgXQ3koJygA/r8r6hkscmwQo1m9SXuV2PAGoJqxH7XJ0sKF2M585UKJ\\ngB+AbMeDKwKBgQDmxdC3F5ikelJrwUYmZzrxZN6FriR7UypmBJTo66cIBkokQEvX\\nDuGhojfVEZ6HUFaiYB9sP/JSxYKVgYt92VYxSUw0TLMqkM/sZAJ6MNeDEVQA8BZ7\\nEwKoihY+TisF6JbdgXo4rstQOtizLgeIK1HBrANLDvh/ob3wNlumki5wyQKBgQDJ\\n6uywUSDghVfWqR1qUbACNiQ2l1q/Ki3kheToLdEEfO2rHcdd3IDxVXrzb7/DuZbO\\nJPcX7XOisf4qWvagmnMPJq64u0X7SwWoGBRZ0rrlEkKA0CzWrGzAA7g2fcj9G2ls\\nAXTZ3B2wD6hxk8u2SMaeZvrmI4PCy39ddJLKofmqwwKBgBMd+0geAFy5J9RBNtZg\\n1FB9glfRCKuOUCeI0jjFvFjTuZRQaRMNAnOZ71YZHCkeW+oVFKkaiBzWlyyXb6Q7\\nYp0bS0gIuffzYJJw/cW8k42Zl4o1FDESY1DVeB+SRMRVv0oasYLjWo7SKuqaCazO\\nCjBFXhvcdvEXD3Ej0WnMgEgX\\n-----END PRIVATE KEY-----\\n",
+            "client_email": "amexfhr@amex-449014.iam.gserviceaccount.com",
+            "client_id": "112740972997297729453",
+            "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+            "token_uri": "https://oauth2.googleapis.com/token",
+            "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+            "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/amexfhr%40amex-449014.iam.gserviceaccount.com",
+            "universe_domain": "googleapis.com"
+        };
+
+        let currentData = [];
+        let currentProcessingGroup = null;
+
+        // 페이지 로드 시 오늘 날짜로 설정
+        document.addEventListener('DOMContentLoaded', function() {
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('searchDate').value = today;
+        });
+
+        // Mock 데이터 생성 함수 (실제 구현 시 제거)
+        function generateMockData(date) {
+            const mockData = [
+                {
+                    date: date,
+                    startTime: '09:02:32',
+                    endTime: '09:06:08',
+                    duration: 216,
+                    phoneNumber: '1056268010',
+                    queue: '투어비스-항공 해외나홀로',
+                    reason: '중료',
+                    updateTime: `${date} 20:53:13`,
+                    processStatus: '',
+                    processManager: ''
+                },
+                {
+                    date: date,
+                    startTime: '09:16:51',
+                    endTime: '09:19:16',
+                    duration: 145,
+                    phoneNumber: '1093462408',
+                    queue: '투어비스-항공 일정날짜문의',
+                    reason: '중료',
+                    updateTime: `${date} 20:56:40`,
+                    processStatus: '',
+                    processManager: ''
+                },
+                {
+                    date: date,
+                    startTime: '09:28:27',
+                    endTime: '09:32:15',
+                    duration: 228,
+                    phoneNumber: '1056268010',
+                    queue: '투어비스-항공 해외나홀로',
+                    reason: '중료',
+                    updateTime: `${date} 21:00:55`,
+                    processStatus: '',
+                    processManager: ''
+                },
+                {
+                    date: date,
+                    startTime: '13:20:02',
+                    endTime: '13:25:48',
+                    duration: 346,
+                    phoneNumber: '1056268010',
+                    queue: '투어비스-항공 일정날짜문의',
+                    reason: '중료',
+                    updateTime: `${date} 21:00:55`,
+                    processStatus: '',
+                    processManager: ''
+                }
+            ];
+
+            return mockData;
+        }
+
+        // 구글 스프레드시트에서 데이터 조회
+        async function fetchDataFromSheet(date) {
+            try {
+                // 실제 구현에서는 Google Sheets API를 사용
+                // 현재는 Mock 데이터 사용
+                console.log(`Fetching data for date: ${date}`);
+                
+                // Mock 데이터 반환
+                return generateMockData(date);
+                
+                // 실제 API 호출 코드 (참고용)
+                /*
+                const response = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/Sheet1?key=${API_KEY}`);
+                const data = await response.json();
+                
+                if (data.values) {
+                    return data.values.filter(row => row[0] === date);
+                }
+                return [];
+                */
+            } catch (error) {
+                console.error('Error fetching data:', error);
+                throw error;
+            }
+        }
+
+        // 전화번호별 그룹핑 및 중복 처리 로직
+        function processCallData(rawData) {
+            const groups = {};
+            
+            // 전화번호별로 그룹핑
+            rawData.forEach((call, index) => {
+                const phoneNumber = call.phoneNumber;
+                if (!groups[phoneNumber]) {
+                    groups[phoneNumber] = [];
+                }
+                groups[phoneNumber].push({...call, originalIndex: index});
+            });
+
+            const processedData = [];
+
+            Object.keys(groups).forEach(phoneNumber => {
+                const calls = groups[phoneNumber];
+                
+                // 시간순으로 정렬
+                calls.sort((a, b) => {
+                    const timeA = new Date(`${a.date} ${a.startTime}`);
+                    const timeB = new Date(`${b.date} ${b.startTime}`);
+                    return timeA - timeB;
+                });
+
+                // OB콜 처리가 된 콜들을 기준으로 그룹 분리
+                let currentGroup = [];
+                
+                for (let i = 0; i < calls.length; i++) {
+                    const call = calls[i];
+                    currentGroup.push(call);
+                    
+                    // 다음 콜이 있고, 현재 콜이 처리되었으며, 다음 콜이 처리되지 않았다면 그룹 종료
+                    if (i < calls.length - 1) {
+                        const nextCall = calls[i + 1];
+                        if (call.processStatus && !nextCall.processStatus) {
+                            // 현재 그룹 처리
+                            if (currentGroup.length > 0) {
+                                const latestCall = currentGroup[currentGroup.length - 1];
+                                processedData.push({
+                                    ...latestCall,
+                                    callCount: currentGroup.length,
+                                    groupCalls: [...currentGroup]
+                                });
+                            }
+                            currentGroup = [];
+                        }
+                    }
+                }
+                
+                // 마지막 그룹 처리
+                if (currentGroup.length > 0) {
+                    const latestCall = currentGroup[currentGroup.length - 1];
+                    processedData.push({
+                        ...latestCall,
+                        callCount: currentGroup.length,
+                        groupCalls: [...currentGroup]
+                    });
+                }
+            });
+
+            return processedData;
+        }
+
+        // 조회 함수
+        async function searchCalls() {
+            const searchDate = document.getElementById('searchDate').value;
+            if (!searchDate) {
+                showError('조회할 날짜를 선택해주세요.');
+                return;
+            }
+
+            showLoading(true);
+            hideMessages();
+
+            try {
+                const rawData = await fetchDataFromSheet(searchDate);
+                currentData = processCallData(rawData);
+                
+                displayResults(currentData);
+                showLoading(false);
+                
+                if (currentData.length === 0) {
+                    showError('조회된 데이터가 없습니다.');
+                }
+            } catch (error) {
+                console.error('Error searching calls:', error);
+                showError('데이터 조회 중 오류가 발생했습니다.');
+                showLoading(false);
+            }
+        }
+
+        // 결과 표시
+        function displayResults(data) {
+            const resultsSection = document.getElementById('resultsSection');
+            const resultsCount = document.getElementById('resultsCount');
+            const resultsTable = document.getElementById('resultsTable');
+
+            resultsCount.textContent = `총 ${data.length}건`;
+            resultsTable.innerHTML = '';
+
+            data.forEach((call, index) => {
+                const row = document.createElement('tr');
+                
+                // 대기시간을 분 단위로 변환
+                const waitTimeMinutes = Math.round(call.duration / 60);
+                
+                row.innerHTML = `
+                    <td>${call.date}</td>
+                    <td class="time-display">${call.startTime}</td>
+                    <td class="time-display">${waitTimeMinutes}분</td>
+                    <td class="phone-number">${call.phoneNumber}</td>
+                    <td>${call.queue}</td>
+                    <td><span class="call-count">${call.callCount}번</span></td>
+                    <td>
+                        ${call.processStatus ? 
+                            `<span class="status-processed">처리완료</span>` : 
+                            `<span class="status-pending">미처리</span>`
+                        }
+                    </td>
+                    <td>${call.processManager || '-'}</td>
+                    <td class="action-cell">
+                        <button class="btn btn-primary btn-small" onclick="openProcessModal(${index})">
+                            ${call.processStatus ? '수정' : '처리'}
+                        </button>
+                    </td>
+                `;
+                
+                resultsTable.appendChild(row);
+            });
+
+            resultsSection.style.display = 'block';
+        }
+
+        // OB콜 처리 모달 열기
+        function openProcessModal(index) {
+            const call = currentData[index];
+            currentProcessingGroup = call;
+            
+            document.getElementById('modalPhoneNumber').textContent = call.phoneNumber;
+            document.getElementById('processStatus').value = call.processStatus || '';
+            document.getElementById('processManager').value = call.processManager || '';
+            
+            document.getElementById('processModal').classList.add('show');
+        }
+
+        // 모달 닫기
+        function closeModal() {
+            document.getElementById('processModal').classList.remove('show');
+            currentProcessingGroup = null;
+        }
+
+        // OB콜 처리 저장
+        async function saveProcess() {
+            const processStatus = document.getElementById('processStatus').value;
+            const processManager = document.getElementById('processManager').value;
+
+            if (!processStatus || !processManager) {
+                alert('처리 여부와 처리담당자를 모두 입력해주세요.');
+                return;
+            }
+
+            try {
+                // 실제 구현에서는 Google Sheets API를 사용하여 업데이트
+                console.log('Saving process data:', {
+                    phoneNumber: currentProcessingGroup.phoneNumber,
+                    processStatus,
+                    processManager,
+                    groupCalls: currentProcessingGroup.groupCalls
+                });
+
+                // Mock 업데이트
+                currentProcessingGroup.processStatus = processStatus;
+                currentProcessingGroup.processManager = processManager;
+                
+                // 같은 그룹의 모든 콜에 동일한 처리 정보 적용
+                if (currentProcessingGroup.groupCalls) {
+                    currentProcessingGroup.groupCalls.forEach(call => {
+                        call.processStatus = processStatus;
+                        call.processManager = processManager;
+                    });
+                }
+
+                closeModal();
+                displayResults(currentData);
+                showSuccess('OB콜 처리가 완료되었습니다.');
+
+                // 실제 스프레드시트 업데이트 코드 (참고용)
+                /*
+                await updateSpreadsheet(currentProcessingGroup.groupCalls, {
+                    processStatus,
+                    processManager
+                });
+                */
+
+            } catch (error) {
+                console.error('Error saving process:', error);
+                showError('처리 저장 중 오류가 발생했습니다.');
+            }
+        }
+
+        // 구글 스프레드시트 업데이트 (실제 구현용 참고 코드)
+        async function updateSpreadsheet(calls, processData) {
+            // 실제 구현에서는 Google Sheets API를 사용하여 업데이트
+            // 서비스 계정 인증 및 배치 업데이트 로직 필요
+            console.log('Updating spreadsheet with:', calls, processData);
+        }
+
+        // 유틸리티 함수들
+        function showLoading(show) {
+            document.getElementById('loadingMessage').style.display = show ? 'block' : 'none';
+        }
+
+        function showError(message) {
+            const errorElement = document.getElementById('errorMessage');
+            errorElement.textContent = message;
+            errorElement.style.display = 'block';
+        }
+
+        function showSuccess(message) {
+            const successElement = document.getElementById('successMessage');
+            successElement.textContent = message;
+            successElement.style.display = 'block';
+            setTimeout(() => {
+                successElement.style.display = 'none';
+            }, 3000);
+        }
+
+        function hideMessages() {
+            document.getElementById('errorMessage').style.display = 'none';
+            document.getElementById('successMessage').style.display = 'none';
+        }
+
+        // 모달 외부 클릭 시 닫기
+        document.getElementById('processModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeModal();
+            }
+        });
+
+        // ESC 키로 모달 닫기
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                closeModal();
+            }
+        });
+    </script>
+</body>
+</html>
