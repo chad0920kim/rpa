@@ -386,12 +386,12 @@ class GoogleAppsScriptAPI {
     }
     
     // Missing Call 관련 API
-    static async getCalls(filters = {}) {
-        return await this.request('getCalls', { filters });
+    static async getCalls(params = {}) {
+        return await this.request('getCalls', params);
     }
     
-    static async updateCall(callId, updateData) {
-        return await this.request('updateCall', { callId, updateData });
+    static async updateCall(callData) {
+        return await this.request('updateCall', { callData });
     }
 }
 
