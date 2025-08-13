@@ -90,41 +90,51 @@
                     <button class="nav-btn hidden" onclick="showSection('requests')" id="requestsMenuBtn">📋 계정 신청 관리</button>
                 </div>
             </div>
+            
+            <!-- 검색 섹션을 헤더로 이동 -->
+            <div class="search-section">
+                <div class="search-form">
+                    <div class="form-group">
+                        <label for="searchDate">조회 일자</label>
+                        <input type="date" id="searchDate">
+                    </div>
+                    <div class="form-group">
+                        <label for="processFilter">처리 상태</label>
+                        <select id="processFilter">
+                            <option value="all">전체</option>
+                            <option value="processed">처리 완료</option>
+                            <option value="pending">미처리</option>
+                            <option value="onhold">보류</option>
+                            <option value="retry">재시도 필요</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="queueFilter">인입큐</label>
+                        <select id="queueFilter">
+                            <option value="all">전체</option>
+                            <option value="투어비스-항공 기타문의">기타문의</option>
+                            <option value="투어비스-항공 환불문의">환불문의</option>
+                            <option value="투어비스-항공 일정변경문의">일정변경문의</option>
+                            <option value="투어비스-항공 예약내용확인">예약내용확인</option>
+                            <option value="투어비스-항공 여권/체류자관련문의">여권/체류자관련문의</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <button type="button" class="btn btn-primary" onclick="searchCalls()">
+                            📋 조회
+                        </button>
+                    </div>
+                    <div class="form-group">
+                        <button class="btn btn-secondary" onclick="refreshConnection()">🔄 연결 확인</button>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <!-- 컨텐츠 영역 -->
         <div class="content-wrapper">
             <!-- 대시보드 섹션 -->
             <div id="dashboardSection" class="section active">
-                <div class="section-header">
-                    <h2>Missing Call 처리 현황</h2>
-                    <div>
-                        <button class="btn btn-secondary btn-small" onclick="refreshConnection()">🔄 연결 확인</button>
-                    </div>
-                </div>
-                
-                <div class="search-section">
-                    <div class="search-form">
-                        <div class="form-group">
-                            <label for="searchDate">조회 일자</label>
-                            <input type="date" id="searchDate">
-                        </div>
-                        <div class="form-group">
-                            <label for="processFilter">처리 상태</label>
-                            <select id="processFilter">
-                                <option value="all">전체</option>
-                                <option value="processed">처리 완료</option>
-                                <option value="pending">미처리</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <button type="button" class="btn btn-primary" onclick="searchCalls()">
-                                📋 조회
-                            </button>
-                        </div>
-                    </div>
-                </div>
-
                 <div id="loadingMessage" class="loading hidden">
                     데이터를 조회하고 있습니다<span class="spinner"></span>
                 </div>
@@ -345,7 +355,7 @@
         </div>
     </div>
 
-    <!-- ⭐ OB콜 처리 모달 - UI 개선 완료 버전 -->
+    <!-- OB콜 처리 모달 - UI 개선 완료 버전 -->
     <div id="processModal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
@@ -362,7 +372,7 @@
             </div>
             
             <form id="processForm">
-                <!-- ⭐ 처리 상태와 담당자를 같은 행에 배치 (좌우 50:50) -->
+                <!-- 처리 상태와 담당자를 같은 행에 배치 (좌우 50:50) -->
                 <div class="form-row-horizontal">
                     <div class="form-group form-group-half">
                         <label for="processStatus">처리 상태 *</label>
@@ -381,7 +391,7 @@
                     </div>
                 </div>
 
-                <!-- ⭐ 처리 메모는 전체 너비로 확장 -->
+                <!-- 처리 메모는 전체 너비로 확장 -->
                 <div class="form-group form-group-full">
                     <label for="processNote">처리 메모</label>
                     <textarea id="processNote" rows="4" placeholder="처리 내용이나 특이사항을 입력하세요 (선택사항)"></textarea>
@@ -544,6 +554,7 @@
                 
                 // 기본 필터 설정
                 document.getElementById('processFilter').value = 'all';
+                document.getElementById('queueFilter').value = 'all';
 
                 // 이벤트 리스너 등록
                 setupEventListeners();
@@ -933,6 +944,7 @@
         async function searchCalls() {
             const searchDate = document.getElementById('searchDate').value;
             const processFilter = document.getElementById('processFilter').value;
+            const queueFilter = document.getElementById('queueFilter').value;
             
             if (!searchDate || searchDate.trim() === '') {
                 alert('📅 조회할 날짜를 선택해주세요.');
@@ -949,7 +961,7 @@
                 hideElement('callsResults');
                 hideElement('noDataMessage');
                 
-                Utils.debugLog('Missing Call 조회 시작:', { date: searchDate });
+                Utils.debugLog('Missing Call 조회 시작:', { date: searchDate, processFilter, queueFilter });
                 
                 const result = await GoogleAppsScriptAPI.getCalls({ date: searchDate });
                 
@@ -962,13 +974,26 @@
                     // 처리 상태 필터 적용
                     if (processFilter !== 'all') {
                         data = data.filter(call => {
-                            if (processFilter === 'processed') {
-                                return call.processStatus && call.processStatus.trim() !== '';
-                            } else if (processFilter === 'pending') {
-                                return !call.processStatus || call.processStatus.trim() === '';
+                            const status = call.processStatus ? call.processStatus.trim() : '';
+                            
+                            switch (processFilter) {
+                                case 'processed':
+                                    return status && status !== '' && status !== '보류' && status !== '재시도';
+                                case 'pending':
+                                    return !status || status === '';
+                                case 'onhold':
+                                    return status === '보류';
+                                case 'retry':
+                                    return status === '재시도' || status === '재시도 필요';
+                                default:
+                                    return true;
                             }
-                            return true;
                         });
+                    }
+                    
+                    // 인입큐 필터 적용
+                    if (queueFilter !== 'all') {
+                        data = data.filter(call => call.queue === queueFilter);
                     }
                 } else {
                     throw new Error(result.error || '데이터를 불러올 수 없습니다');
@@ -984,16 +1009,24 @@
                     const noDataTitle = document.getElementById('noDataTitle');
                     const noDataSubtitle = document.getElementById('noDataSubtitle');
                     
-                    if (processFilter === 'processed') {
-                        noDataTitle.textContent = '📭 처리 완료된 데이터가 없습니다';
-                        noDataSubtitle.textContent = '해당 날짜에 처리 완료된 Missing Call이 없습니다.';
-                    } else if (processFilter === 'pending') {
-                        noDataTitle.textContent = '📭 미처리 데이터가 없습니다';
-                        noDataSubtitle.textContent = '해당 날짜에 미처리 Missing Call이 없습니다.';
-                    } else {
-                        noDataTitle.textContent = '📭 조회된 데이터가 없습니다';
-                        noDataSubtitle.textContent = '다른 날짜를 선택해서 조회해보세요.';
+                    let filterDesc = '';
+                    if (processFilter !== 'all') {
+                        const filterNames = {
+                            'processed': '처리 완료된',
+                            'pending': '미처리',
+                            'onhold': '보류 상태의',
+                            'retry': '재시도 필요한'
+                        };
+                        filterDesc += filterNames[processFilter] + ' ';
                     }
+                    
+                    if (queueFilter !== 'all') {
+                        const queueName = queueFilter.replace('투어비스-항공 ', '');
+                        filterDesc += `${queueName} `;
+                    }
+                    
+                    noDataTitle.textContent = `📭 ${filterDesc}데이터가 없습니다`;
+                    noDataSubtitle.textContent = '다른 날짜를 선택하거나 필터 조건을 변경해보세요.';
                     
                     showElement('noDataMessage');
                 }
@@ -1103,18 +1136,28 @@
             displayCallsResultsWithData(sortedData);
         }
 
-        // ⭐ 콜 데이터 결과 표시 (순번 추가된 버전)
+        // 콜 데이터 결과 표시 (순번 추가된 버전)
         function displayCallsResultsWithData(data) {
             const countDiv = document.getElementById('resultsCount');
             const tbody = document.querySelector('#callsTable tbody');
             const processFilter = document.getElementById('processFilter').value;
+            const queueFilter = document.getElementById('queueFilter').value;
             
             // 필터 상태에 따른 제목 변경
             let filterText = '';
-            if (processFilter === 'processed') {
-                filterText = ' (처리 완료만)';
-            } else if (processFilter === 'pending') {
-                filterText = ' (미처리만)';
+            if (processFilter !== 'all') {
+                const filterNames = {
+                    'processed': '처리 완료',
+                    'pending': '미처리',
+                    'onhold': '보류',
+                    'retry': '재시도 필요'
+                };
+                filterText += ` (${filterNames[processFilter]})`;
+            }
+            
+            if (queueFilter !== 'all') {
+                const queueName = queueFilter.replace('투어비스-항공 ', '');
+                filterText += ` (${queueName})`;
             }
 
             countDiv.textContent = `📊 조회 결과: ${data.length}건${filterText}`;
@@ -1166,7 +1209,7 @@
                 row.callData = call;
                 row.setAttribute('data-table-index', index);
                 
-                // ⭐ 순번 칼럼 추가
+                // 순번 칼럼 추가
                 row.innerHTML = `
                     <td class="sequence-number">${index + 1}</td>
                     <td>${Utils.formatDateOnly(call.date)}</td>
@@ -1190,7 +1233,7 @@
             });
         }
 
-        // ⭐ CSV 내보내기 (순번 추가)
+        // CSV 내보내기 (순번 추가)
         function exportToCSV() {
             if (currentCallsData.length === 0) {
                 alert('📭 내보낼 데이터가 없습니다.');
@@ -1694,7 +1737,7 @@
             }
         }
 
-        // ⭐ 테이블 특정 행 업데이트 (순번 칼럼 고려)
+        // 테이블 특정 행 업데이트 (순번 칼럼 고려)
         function updateTableRow(tableIndex, processStatus, processManager) {
             try {
                 const tableBody = document.querySelector('#callsTable tbody');
@@ -1735,7 +1778,7 @@
                         }
                     }
                     
-                    // ⭐ 순번 칼럼 추가로 인한 인덱스 조정
+                    // 순번 칼럼 추가로 인한 인덱스 조정
                     // 처리상태 칼럼 업데이트 (8번째 칼럼, 인덱스 7)
                     if (cells[7]) {
                         cells[7].innerHTML = `
