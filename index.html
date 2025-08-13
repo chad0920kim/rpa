@@ -2256,6 +2256,36 @@
         function hideLoading(elementId) {
             hideElement(elementId);
         }
+        // CSS 스타일을 동적으로 추가하는 함수
+        function applyFixedHeaderStyles() {
+            const style = document.createElement('style');
+            style.textContent = `
+                /* 고정 헤더를 위한 추가 스타일 */
+                .results-content {
+                    flex: 1;
+                    overflow-y: auto;
+                    overflow-x: hidden;
+                    background: white;
+                    position: relative;
+                    min-height: 0;
+                    scroll-behavior: smooth;
+                    height: 100%;
+                }
+                
+                .table-scroll-wrapper {
+                    overflow-x: auto;
+                    overflow-y: visible;
+                    width: 100%;
+                    height: 100%;
+                }
+                
+                // ... 나머지 스타일들
+            `;
+            document.head.appendChild(style);
+        }
+        
+        // 페이지 로드 시 스타일 적용
+        document.addEventListener('DOMContentLoaded', applyFixedHeaderStyles);
     </script>
 </body>
 </html>
