@@ -89,6 +89,21 @@ body {
     color: white;
 }
 
+/* 검색 섹션 (헤더 내부로 이동) */
+.search-section {
+    background: #f8f9ff;
+    padding: 10px 20px;
+    border-bottom: 1px solid #e0e7ff;
+    flex-shrink: 0;
+}
+
+.search-form {
+    display: flex;
+    gap: 10px;
+    align-items: end;
+    flex-wrap: wrap;
+}
+
 /* 메인 컨텐츠 영역 */
 .main-container {
     height: 100vh;
@@ -97,8 +112,8 @@ body {
 }
 
 .content-wrapper {
-    margin-top: 108px; /* 헤더 + 네비 높이 */
-    height: calc(100vh - 108px);
+    margin-top: 160px; /* 헤더 + 네비 + 검색 영역 높이 */
+    height: calc(100vh - 160px);
     overflow: hidden;
 }
 
@@ -128,20 +143,6 @@ body {
     color: #333;
     font-size: 1.1rem;
     font-weight: 500;
-}
-
-/* 검색 섹션 최소화 */
-.search-section {
-    background: #f8f9ff;
-    padding: 12px 20px;
-    border-bottom: 1px solid #e0e7ff;
-    flex-shrink: 0;
-}
-
-.search-form {
-    display: flex;
-    gap: 12px;
-    align-items: end;
 }
 
 .form-group {
@@ -809,18 +810,23 @@ td {
         padding: 6px 15px;
     }
 
+    .search-section {
+        padding: 8px 15px;
+    }
+
     .search-form {
         flex-wrap: wrap;
-        gap: 8px;
+        gap: 6px;
     }
 
     .form-group input, .form-group select {
-        min-width: 100px;
+        min-width: 90px;
+        font-size: 0.8rem;
     }
 
     .content-wrapper {
-        margin-top: 130px;
-        height: calc(100vh - 130px);
+        margin-top: 180px;
+        height: calc(100vh - 180px);
     }
 
     th, td {
@@ -880,8 +886,8 @@ td {
 
 @media (max-width: 480px) {
     .content-wrapper {
-        margin-top: 140px;
-        height: calc(100vh - 140px);
+        margin-top: 200px;
+        height: calc(100vh - 200px);
     }
 
     .section-header {
