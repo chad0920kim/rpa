@@ -5,47 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>투어비스 항공(국제선) Missing Call 처리 시스템</title>
     <link rel="stylesheet" href="styles.css">
-    <style>
-        /* 정렬 가능한 헤더 스타일 */
-        .sortable-header {
-            cursor: pointer;
-            user-select: none;
-            position: relative;
-            padding-right: 20px !important;
-        }
-        
-        .sortable-header:hover {
-            background-color: rgba(59, 130, 246, 0.1);
-        }
-        
-        .sort-arrow {
-            position: absolute;
-            right: 5px;
-            top: 50%;
-            transform: translateY(-50%);
-            font-size: 12px;
-            color: #666;
-            opacity: 0.7;
-        }
-        
-        .sort-arrow.active {
-            color: #3b82f6;
-            opacity: 1;
-            font-weight: bold;
-        }
-        
-        .sort-arrow.asc::after {
-            content: "▲";
-        }
-        
-        .sort-arrow.desc::after {
-            content: "▼";
-        }
-        
-        .sort-arrow.none::after {
-            content: "↕️";
-        }
-    </style>
 </head>
 <body>
     <!-- 연결 상태 표시 -->
@@ -111,26 +70,30 @@
         </div>
     </div>
 
-    <!-- 메인 대시보드 -->
+    <!-- 메인 컨테이너 -->
     <div id="mainContainer" class="main-container">
-        <div class="header">
-            <h1>투어비스 Missing Call 관리 시스템</h1>
-            <div class="user-info">
-                <span class="user-name" id="currentUserName">사용자</span>
-                <span class="user-role" id="currentUserRole">권한</span>
-                <button class="btn btn-secondary btn-small" onclick="logout()" title="시스템에서 로그아웃">🚪 로그아웃</button>
+        <!-- 고정 헤더 -->
+        <div class="fixed-header">
+            <div class="header">
+                <h1>투어비스 Missing Call 관리 시스템</h1>
+                <div class="user-info">
+                    <span class="user-name" id="currentUserName">사용자</span>
+                    <span class="user-role" id="currentUserRole">권한</span>
+                    <button class="btn btn-secondary btn-small" onclick="logout()" title="시스템에서 로그아웃">🚪 로그아웃</button>
+                </div>
+            </div>
+
+            <div class="nav-menu">
+                <div class="nav-buttons">
+                    <button class="nav-btn active" onclick="showSection('dashboard')">📊 대시보드</button>
+                    <button class="nav-btn hidden" onclick="showSection('users')" id="usersMenuBtn">👥 사용자 관리</button>
+                    <button class="nav-btn hidden" onclick="showSection('requests')" id="requestsMenuBtn">📋 계정 신청 관리</button>
+                </div>
             </div>
         </div>
 
-        <div class="nav-menu">
-            <div class="nav-buttons">
-                <button class="nav-btn active" onclick="showSection('dashboard')">📊 대시보드</button>
-                <button class="nav-btn hidden" onclick="showSection('users')" id="usersMenuBtn">👥 사용자 관리</button>
-                <button class="nav-btn hidden" onclick="showSection('requests')" id="requestsMenuBtn">📋 계정 신청 관리</button>
-            </div>
-        </div>
-
-        <div class="content">
+        <!-- 컨텐츠 영역 -->
+        <div class="content-wrapper">
             <!-- 대시보드 섹션 -->
             <div id="dashboardSection" class="section active">
                 <div class="section-header">
@@ -166,44 +129,46 @@
                     데이터를 조회하고 있습니다<span class="spinner"></span>
                 </div>
 
-                <div id="callsResults" class="hidden">
-                    <div style="margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
-                        <h3 id="resultsCount" style="color: #333; margin: 0;">조회 결과</h3>
+                <div id="callsResults" class="results-container hidden">
+                    <div class="results-header">
+                        <h3 id="resultsCount">조회 결과</h3>
                         <div>
                             <button class="btn btn-secondary btn-small" onclick="searchCalls()" title="서버에서 최신 데이터를 가져옵니다">
                                 🔄 새로고침
                             </button>
-                            <button class="btn btn-primary btn-small" onclick="exportToCSV()" style="margin-left: 10px;">📥 CSV 내보내기</button>
+                            <button class="btn btn-primary btn-small" onclick="exportToCSV()" style="margin-left: 8px;">📥 CSV 내보내기</button>
                         </div>
                     </div>
                     
-                    <div class="table-container">
-                        <table id="callsTable">
-                            <thead>
-                                <tr>
-                                    <th>발생일</th>
-                                    <th class="sortable-header" onclick="sortTable('startTime')" title="클릭하여 정렬">
-                                        인입시간
-                                        <span id="sortArrow-startTime" class="sort-arrow desc active"></span>
-                                    </th>
-                                    <th>대기시간(분)</th>
-                                    <th>전화번호</th>
-                                    <th>인입큐</th>
-                                    <th class="sortable-header" onclick="sortTable('callCount')" title="클릭하여 정렬">
-                                        중복횟수
-                                        <span id="sortArrow-callCount" class="sort-arrow none"></span>
-                                    </th>
-                                    <th>처리상태</th>
-                                    <th>처리담당자</th>
-                                    <th>액션</th>
-                                </tr>
-                            </thead>
-                            <tbody></tbody>
-                        </table>
+                    <div class="results-content">
+                        <div class="table-container">
+                            <table id="callsTable">
+                                <thead>
+                                    <tr>
+                                        <th>발생일</th>
+                                        <th class="sortable-header" onclick="sortTable('startTime')" title="클릭하여 정렬">
+                                            인입시간
+                                            <span id="sortArrow-startTime" class="sort-arrow desc active"></span>
+                                        </th>
+                                        <th>대기시간(분)</th>
+                                        <th>전화번호</th>
+                                        <th>인입큐</th>
+                                        <th class="sortable-header" onclick="sortTable('callCount')" title="클릭하여 정렬">
+                                            중복횟수
+                                            <span id="sortArrow-callCount" class="sort-arrow none"></span>
+                                        </th>
+                                        <th>처리상태</th>
+                                        <th>처리담당자</th>
+                                        <th>액션</th>
+                                    </tr>
+                                </thead>
+                                <tbody></tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
 
-                <div id="noDataMessage" class="text-center hidden" style="padding: 40px; color: #666;">
+                <div id="noDataMessage" class="no-data-message text-center hidden">
                     <h3 id="noDataTitle">📭 조회된 데이터가 없습니다</h3>
                     <p id="noDataSubtitle">다른 날짜를 선택하거나 필터 조건을 변경해보세요.</p>
                 </div>
@@ -519,7 +484,7 @@
             initializeApp();
         });
 
-        // ⭐ 수정된 앱 초기화 (날짜 처리 개선)
+        // 앱 초기화
         async function initializeApp() {
             Utils.debugLog('앱 초기화 시작');
             
@@ -563,8 +528,8 @@
                     showLoginScreen();
                 }
 
-                // ⭐ 수정: 오늘 날짜 설정 (UTC 변환 방지)
-                const today = Utils.getTodayString(); // Utils에서 안전한 날짜 문자열 가져오기
+                // 오늘 날짜 설정
+                const today = Utils.getTodayString();
                 document.getElementById('searchDate').value = today;
                 
                 // 기본 필터 설정
@@ -582,7 +547,7 @@
             }
         }
 
-        // ⭐ 수정된 테이블 정렬 함수 (안전한 시간 비교)
+        // 테이블 정렬 함수
         function sortTable(column) {
             Utils.debugLog('정렬 요청:', { column, currentSort });
             
@@ -608,30 +573,21 @@
                     let valueA, valueB;
                     
                     if (column === 'startTime') {
-                        // ⭐ 인입시간 정렬 - 안전한 문자열 비교
                         try {
                             const dateA = Utils.formatDateOnly(a.date) || '';
                             const timeA = Utils.formatTimeOnly(a.startTime) || '';
                             const dateB = Utils.formatDateOnly(b.date) || '';
                             const timeB = Utils.formatTimeOnly(b.startTime) || '';
                             
-                            // YYYY-MM-DD HH:MM:SS 형식으로 조합하여 문자열 비교
                             valueA = `${dateA} ${timeA}`;
                             valueB = `${dateB} ${timeB}`;
                             
-                            Utils.debugLog('시간 정렬 비교:', { 
-                                a: { date: dateA, time: timeA, combined: valueA },
-                                b: { date: dateB, time: timeB, combined: valueB }
-                            });
-                            
                         } catch (error) {
                             Utils.debugLog('시간 정렬 오류:', error);
-                            // 오류 발생시 기본값
                             valueA = `${a.date} ${a.startTime}`;
                             valueB = `${b.date} ${b.startTime}`;
                         }
                     } else if (column === 'callCount') {
-                        // 중복횟수 정렬 - 숫자 비교
                         valueA = parseInt(a.callCount) || 0;
                         valueB = parseInt(b.callCount) || 0;
                     }
@@ -660,13 +616,7 @@
             Utils.debugLog('정렬 완료:', { 
                 column, 
                 direction: currentSort.direction, 
-                dataLength: sortedData.length,
-                firstItem: sortedData[0] ? {
-                    phoneNumber: sortedData[0].phoneNumber,
-                    date: Utils.formatDateOnly(sortedData[0].date),
-                    startTime: Utils.formatTimeOnly(sortedData[0].startTime),
-                    callCount: sortedData[0].callCount
-                } : null
+                dataLength: sortedData.length
             });
         }
 
@@ -844,7 +794,7 @@
                 loginBtn.disabled = true;
                 btnText.textContent = '로그인 중...';
                 
-                // 사용자 인증 (Apps Script의 authenticate 액션 사용)
+                // 사용자 인증
                 const result = await GoogleAppsScriptAPI.request('authenticate', { username, password });
                 
                 if (result.success && result.user) {
@@ -969,418 +919,7 @@
             }
         }
 
-        // 사용자 관리 섹션 로딩
-        async function loadUsersSection() {
-            if (!SessionManager.hasRole('manager')) {
-                alert('❌ 권한이 없습니다.');
-                return;
-            }
-
-            try {
-                showLoading('usersLoading');
-                
-                // Apps Script의 getUsers 액션 사용
-                const result = await GoogleAppsScriptAPI.getUsers();
-                
-                if (result.success) {
-                    // 승인된 사용자만 표시
-                    currentUsersData = result.users.filter(u => u.status === 'approved') || [];
-                    displayUsersResults(currentUsersData);
-                } else {
-                    throw new Error(result.error || '사용자 목록을 불러올 수 없습니다');
-                }
-                
-                hideLoading('usersLoading');
-                
-            } catch (error) {
-                Utils.debugLog('사용자 섹션 로딩 오류:', error);
-                hideLoading('usersLoading');
-                alert('❌ 사용자 목록을 불러오는 중 오류가 발생했습니다: ' + error.message);
-            }
-        }
-
-        // 계정 신청 관리 섹션 로딩
-        async function loadRequestsSection() {
-            if (!SessionManager.hasRole('manager')) {
-                alert('❌ 권한이 없습니다.');
-                return;
-            }
-
-            try {
-                showLoading('requestsLoading');
-                
-                const result = await GoogleAppsScriptAPI.getPendingRequests();
-                
-                if (result.success) {
-                    currentRequestsData = result.requests || [];
-                    displayRequestsResults(currentRequestsData);
-                } else {
-                    throw new Error(result.error || '신청 목록을 불러올 수 없습니다');
-                }
-                
-                hideLoading('requestsLoading');
-                
-            } catch (error) {
-                Utils.debugLog('신청 섹션 로딩 오류:', error);
-                hideLoading('requestsLoading');
-                alert('❌ 신청 목록을 불러오는 중 오류가 발생했습니다: ' + error.message);
-            }
-        }
-
-        // 계정 신청 목록 결과 표시
-        function displayRequestsResults(requests) {
-            const tbody = document.querySelector('#requestsTable tbody');
-            const noRequestsMsg = document.getElementById('noRequestsMessage');
-            
-            tbody.innerHTML = '';
-
-            if (requests.length === 0) {
-                showElement('noRequestsMessage');
-                return;
-            }
-
-            hideElement('noRequestsMessage');
-
-            requests.forEach((request, index) => {
-                const row = tbody.insertRow();
-                row.innerHTML = `
-                    <td class="time-display">${Utils.formatKoreanDateTime(request.requestDate)}</td>
-                    <td>${request.name}</td>
-                    <td>${request.email}</td>
-                    <td>${request.phone}</td>
-                    <td>${request.department}</td>
-                    <td><span class="status-badge status-${request.role}">${getRoleDisplayName(request.role)}</span></td>
-                    <td class="phone-number">${request.requestedUsername || '자동 생성'}</td>
-                    <td><span class="status-badge status-pending">⏳ 대기중</span></td>
-                    <td style="white-space: nowrap;">
-                        <button class="btn btn-success btn-small" onclick="openApprovalModal(${index})" style="margin-right: 5px;">
-                            ✅ 승인
-                        </button>
-                        <button class="btn btn-danger btn-small" onclick="rejectRequest(${index})">
-                            ❌ 거부
-                        </button>
-                    </td>
-                `;
-            });
-        }
-
-        // 계정 신청 승인 모달 열기
-        function openApprovalModal(index) {
-            const request = currentRequestsData[index];
-            
-            document.getElementById('approvalRequestId').value = request.id;
-            document.getElementById('approvalRequestName').textContent = request.name;
-            document.getElementById('approvalRequestInfo').textContent = 
-                `${request.email} | ${request.department} | ${getRoleDisplayName(request.role)}`;
-            
-            // 희망 사용자 ID가 있으면 미리 채워넣기
-            document.getElementById('approvalUsername').value = request.requestedUsername || '';
-            document.getElementById('approvalPassword').value = '';
-            document.getElementById('approvalNote').value = '';
-
-            hideAlert('approvalModalError');
-            document.getElementById('approvalModal').classList.add('show');
-            
-            setTimeout(() => {
-                const usernameField = document.getElementById('approvalUsername');
-                if (usernameField.value) {
-                    document.getElementById('approvalPassword').focus();
-                } else {
-                    usernameField.focus();
-                }
-            }, 100);
-        }
-
-        // 승인 모달 닫기
-        function closeApprovalModal() {
-            closeModal('approvalModal');
-            hideAlert('approvalModalError');
-        }
-
-        // 계정 신청 승인 처리
-        async function approveAccountRequest() {
-            const requestId = document.getElementById('approvalRequestId').value;
-            const username = document.getElementById('approvalUsername').value.trim();
-            const password = document.getElementById('approvalPassword').value;
-            const note = document.getElementById('approvalNote').value.trim();
-
-            if (!username || !password) {
-                showAlert('approvalModalError', '사용자 ID와 임시 비밀번호를 모두 입력해주세요.', 'error');
-                return;
-            }
-
-            const passwordValidation = Utils.isValidPassword(password);
-            if (!passwordValidation.valid) {
-                showAlert('approvalModalError', passwordValidation.message, 'error');
-                return;
-            }
-
-            try {
-                // 버튼 상태 변경
-                const approveBtn = document.querySelector('#approvalModal .btn-success');
-                const btnText = document.getElementById('approvalSaveBtnText');
-                approveBtn.disabled = true;
-                btnText.textContent = '승인 처리 중...';
-
-                const approvalData = {
-                    username: username,
-                    password: password,
-                    note: note
-                };
-
-                const result = await GoogleAppsScriptAPI.approveRequest(requestId, approvalData);
-
-                if (result.success) {
-                    closeApprovalModal();
-                    await loadRequestsSection(); // 목록 새로고침
-                    
-                    alert(`✅ 계정이 승인되어 생성되었습니다!\n\n👤 사용자: ${result.user.name}\n🆔 사용자 ID: ${result.user.username}\n📧 이메일: ${result.user.email}\n\n💡 생성된 임시 비밀번호를 사용자에게 전달해주세요.`);
-                } else {
-                    showAlert('approvalModalError', result.error || '승인 처리 중 오류가 발생했습니다.', 'error');
-                }
-
-            } catch (error) {
-                Utils.debugLog('승인 처리 오류:', error);
-                showAlert('approvalModalError', '승인 처리 중 오류가 발생했습니다: ' + error.message, 'error');
-            } finally {
-                // 버튼 복원
-                const approveBtn = document.querySelector('#approvalModal .btn-success');
-                const btnText = document.getElementById('approvalSaveBtnText');
-                approveBtn.disabled = false;
-                btnText.textContent = '✅ 승인 및 계정 생성';
-            }
-        }
-
-        // 계정 신청 거부
-        async function rejectRequest(index) {
-            const request = currentRequestsData[index];
-            
-            const reason = prompt(`⚠️ 계정 신청을 거부하시겠습니까?\n\n신청자: ${request.name}\n이메일: ${request.email}\n\n거부 사유를 입력해주세요 (선택사항):`);
-            
-            if (reason === null) return; // 취소한 경우
-
-            try {
-                const result = await GoogleAppsScriptAPI.rejectRequest(request.id, reason);
-
-                if (result.success) {
-                    await loadRequestsSection(); // 목록 새로고침
-                    alert(`❌ 계정 신청이 거부되었습니다.\n\n신청자: ${request.name}\n사유: ${reason || '사유 없음'}`);
-                } else {
-                    alert('❌ 거부 처리 중 오류가 발생했습니다: ' + result.error);
-                }
-
-            } catch (error) {
-                Utils.debugLog('거부 처리 오류:', error);
-                alert('❌ 거부 처리 중 오류가 발생했습니다: ' + error.message);
-            }
-        }
-
-        // 사용자 목록 결과 표시
-        function displayUsersResults(users) {
-            const tbody = document.querySelector('#usersTable tbody');
-            tbody.innerHTML = '';
-
-            if (users.length === 0) {
-                const row = tbody.insertRow();
-                row.innerHTML = `
-                    <td colspan="8" class="text-center" style="padding: 40px; color: #666;">
-                        👥 등록된 사용자가 없습니다.
-                    </td>
-                `;
-                return;
-            }
-
-            users.forEach((user, index) => {
-                const row = tbody.insertRow();
-                const statusClass = user.status === 'approved' ? 'status-processed' : 'status-pending';
-                const statusText = user.status === 'approved' ? '✅ 활성' : '⏳ 대기중';
-                
-                row.innerHTML = `
-                    <td class="phone-number">${user.username}</td>
-                    <td>${user.name}</td>
-                    <td>${user.email}</td>
-                    <td><span class="status-badge status-${user.role}">${getRoleDisplayName(user.role)}</span></td>
-                    <td><span class="status-badge ${statusClass}">${statusText}</span></td>
-                    <td class="time-display">${Utils.formatDateOnly(user.createdAt) || '-'}</td>
-                    <td class="time-display">${Utils.formatKoreanDateTime(user.lastLogin) || '-'}</td>
-                    <td style="white-space: nowrap;">
-                        <button class="btn btn-primary btn-small" onclick="editUser(${index})" style="margin-right: 5px;">✏️ 수정</button>
-                        ${user.username !== currentUser.username ? 
-                            `<button class="btn btn-danger btn-small" onclick="deleteUser(${index})">🗑️ 삭제</button>` : 
-                            '<span class="text-small">현재 사용자</span>'
-                        }
-                    </td>
-                `;
-            });
-        }
-
-        // 권한 표시명 반환
-        function getRoleDisplayName(role) {
-            const roleNames = {
-                'admin': '시스템 관리자',
-                'manager': '관리자', 
-                'user': '일반 사용자'
-            };
-            return roleNames[role] || role;
-        }
-
-        // 사용자 모달 열기
-        function openUserModal(user = null) {
-            const isEdit = !!user;
-            
-            document.getElementById('userModalTitle').textContent = isEdit ? '✏️ 사용자 수정' : '➕ 사용자 추가';
-            
-            if (isEdit) {
-                document.getElementById('userId').value = user.id;
-                document.getElementById('userUsername').value = user.username;
-                document.getElementById('userUsername').disabled = true;
-                document.getElementById('userPassword').required = false;
-                document.getElementById('userPassword').placeholder = '변경하지 않으려면 비워두세요';
-                document.getElementById('userName').value = user.name;
-                document.getElementById('userEmail').value = user.email;
-                document.getElementById('userRole').value = user.role;
-            } else {
-                document.getElementById('userForm').reset();
-                document.getElementById('userUsername').disabled = false;
-                document.getElementById('userPassword').required = true;
-                document.getElementById('userPassword').placeholder = '6자 이상 입력하세요';
-            }
-
-            hideAlert('userModalError');
-            document.getElementById('userModal').classList.add('show');
-            
-            // 첫 번째 입력 필드에 포커스
-            setTimeout(() => {
-                if (!isEdit) {
-                    document.getElementById('userUsername').focus();
-                } else {
-                    document.getElementById('userName').focus();
-                }
-            }, 100);
-        }
-
-        // 사용자 모달 닫기
-        function closeUserModal() {
-            closeModal('userModal');
-        }
-
-        // 사용자 수정
-        function editUser(index) {
-            const user = currentUsersData[index];
-            openUserModal(user);
-        }
-
-        // 사용자 삭제
-        async function deleteUser(index) {
-            const user = currentUsersData[index];
-            
-            if (confirm(`⚠️ 사용자 '${user.name}'를 삭제하시겠습니까?\n\n이 작업은 되돌릴 수 없습니다.`)) {
-                try {
-                    // Apps Script의 deleteUser 액션 사용
-                    const result = await GoogleAppsScriptAPI.deleteUser(user.id);
-
-                    if (result.success) {
-                        await loadUsersSection();
-                        alert('✅ 사용자가 삭제되었습니다.');
-                    } else {
-                        alert('❌ 삭제 중 오류가 발생했습니다: ' + result.error);
-                    }
-                } catch (error) {
-                    Utils.debugLog('사용자 삭제 오류:', error);
-                    alert('❌ 삭제 중 오류가 발생했습니다: ' + error.message);
-                }
-            }
-        }
-
-        // 사용자 저장
-        async function saveUser() {
-            const userId = document.getElementById('userId').value;
-            const username = document.getElementById('userUsername').value.trim();
-            const password = document.getElementById('userPassword').value;
-            const name = document.getElementById('userName').value.trim();
-            const email = document.getElementById('userEmail').value.trim();
-            const role = document.getElementById('userRole').value;
-
-            // 유효성 검사
-            if (!username || !name || !email || !role) {
-                showAlert('userModalError', '필수 항목을 모두 입력해주세요.', 'error');
-                return;
-            }
-
-            if (!Utils.isValidEmail(email)) {
-                showAlert('userModalError', '올바른 이메일 주소를 입력해주세요.', 'error');
-                return;
-            }
-
-            if (!userId && !password) {
-                showAlert('userModalError', '새 사용자는 비밀번호가 필요합니다.', 'error');
-                return;
-            }
-
-            if (password) {
-                const passwordValidation = Utils.isValidPassword(password);
-                if (!passwordValidation.valid) {
-                    showAlert('userModalError', passwordValidation.message, 'error');
-                    return;
-                }
-            }
-
-            try {
-                const isEdit = !!userId;
-                
-                // 버튼 상태 변경
-                const saveBtn = document.querySelector('#userModal .btn-success');
-                const btnText = document.getElementById('userSaveBtnText');
-                saveBtn.disabled = true;
-                btnText.textContent = '저장 중...';
-                
-                const userData = {
-                    id: userId || Utils.generateUUID(),
-                    username: username,
-                    name: name,
-                    email: email,
-                    role: role,
-                    status: 'approved', // 관리자가 직접 생성하는 경우는 바로 승인
-                    createdAt: isEdit ? null : Utils.getCurrentDateTime(),
-                    lastLogin: isEdit ? null : null
-                };
-
-                // 비밀번호가 있으면 해시 처리
-                if (password) {
-                    userData.passwordHash = Utils.simpleHash(password, username);
-                }
-
-                let result;
-                if (isEdit) {
-                    // Apps Script의 updateUser 액션 사용
-                    result = await GoogleAppsScriptAPI.updateUser(userId, userData);
-                } else {
-                    // Apps Script의 addUser 액션 사용
-                    result = await GoogleAppsScriptAPI.addUser(userData);
-                }
-
-                if (result.success) {
-                    await loadUsersSection();
-                    closeUserModal();
-                    
-                    alert(`✅ ${isEdit ? '사용자가 수정되었습니다.' : '사용자가 추가되었습니다.'}`);
-                } else {
-                    showAlert('userModalError', result.error || '저장 중 오류가 발생했습니다.', 'error');
-                }
-
-            } catch (error) {
-                Utils.debugLog('사용자 저장 오류:', error);
-                showAlert('userModalError', '사용자 저장 중 오류가 발생했습니다: ' + error.message, 'error');
-            } finally {
-                // 버튼 복원
-                const saveBtn = document.querySelector('#userModal .btn-success');
-                const btnText = document.getElementById('userSaveBtnText');
-                saveBtn.disabled = false;
-                btnText.textContent = '💾 저장';
-            }
-        }
-
-        // ⭐ 수정된 Missing Call 조회 (날짜 검증 추가)
+        // Missing Call 조회
         async function searchCalls() {
             const searchDate = document.getElementById('searchDate').value;
             const processFilter = document.getElementById('processFilter').value;
@@ -1390,7 +929,6 @@
                 return;
             }
 
-            // ⭐ 날짜 검증 추가
             if (!searchDate.match(/^\d{4}-\d{2}-\d{2}$/)) {
                 alert('⚠️ 올바른 날짜 형식이 아닙니다. YYYY-MM-DD 형식으로 입력해주세요.');
                 return;
@@ -1403,7 +941,6 @@
                 
                 Utils.debugLog('Missing Call 조회 시작:', { date: searchDate });
                 
-                // Apps Script의 getCalls 액션 사용
                 const result = await GoogleAppsScriptAPI.getCalls({ date: searchDate });
                 
                 Utils.debugLog('Apps Script 응답:', result);
@@ -1460,7 +997,7 @@
             }
         }
 
-        // ⭐ 수정된 콜 데이터 처리 (안전한 시간 정렬)
+        // 콜 데이터 처리
         function processCallData(rawCalls) {
             const groups = {};
             
@@ -1478,23 +1015,14 @@
             Object.keys(groups).forEach(phoneNumber => {
                 const calls = groups[phoneNumber];
                 
-                // ⭐ 안전한 시간 정렬
+                // 시간 정렬
                 calls.sort((a, b) => {
                     try {
-                        // Utils를 사용한 안전한 시간 문자열 생성 후 비교
                         const timeStrA = Utils.createSortableTimeString(a.date, a.startTime);
                         const timeStrB = Utils.createSortableTimeString(b.date, b.startTime);
-                        
-                        Utils.debugLog('시간 정렬 비교:', { 
-                            a: { date: a.date, startTime: a.startTime, combined: timeStrA },
-                            b: { date: b.date, startTime: b.startTime, combined: timeStrB }
-                        });
-                        
-                        // 문자열로 비교 (YYYY-MM-DD HH:MM:SS 형식)
                         return timeStrA.localeCompare(timeStrB);
                     } catch (error) {
                         Utils.debugLog('시간 정렬 오류:', error);
-                        // 오류 발생시 원본 순서 유지
                         return 0;
                     }
                 });
@@ -1516,7 +1044,7 @@
                                 processedData.push({
                                     ...latestCall,
                                     callCount: currentGroup.length,
-                                    groupCalls: currentGroup.map(c => ({...c})) // 깊은 복사
+                                    groupCalls: currentGroup.map(c => ({...c}))
                                 });
                             }
                             currentGroup = [];
@@ -1530,21 +1058,14 @@
                     processedData.push({
                         ...latestCall,
                         callCount: currentGroup.length,
-                        groupCalls: currentGroup.map(c => ({...c})) // 깊은 복사
+                        groupCalls: currentGroup.map(c => ({...c}))
                     });
                 }
             });
 
-            // 디버그: 처리된 데이터 로그
             Utils.debugLog('processCallData 완료:', {
                 rawCount: rawCalls.length,
-                processedCount: processedData.length,
-                sampleData: processedData.slice(0, 2).map(item => ({
-                    phoneNumber: item.phoneNumber,
-                    date: Utils.formatDateOnly(item.date),
-                    startTime: Utils.formatTimeOnly(item.startTime),
-                    callCount: item.callCount
-                }))
+                processedCount: processedData.length
             });
 
             return processedData;
@@ -1648,13 +1169,154 @@
             document.body.removeChild(link);
         }
 
+        // 사용자 관리 섹션 로딩
+        async function loadUsersSection() {
+            if (!SessionManager.hasRole('manager')) {
+                alert('❌ 권한이 없습니다.');
+                return;
+            }
+
+            try {
+                showLoading('usersLoading');
+                
+                const result = await GoogleAppsScriptAPI.getUsers();
+                
+                if (result.success) {
+                    currentUsersData = result.users.filter(u => u.status === 'approved') || [];
+                    displayUsersResults(currentUsersData);
+                } else {
+                    throw new Error(result.error || '사용자 목록을 불러올 수 없습니다');
+                }
+                
+                hideLoading('usersLoading');
+                
+            } catch (error) {
+                Utils.debugLog('사용자 섹션 로딩 오류:', error);
+                hideLoading('usersLoading');
+                alert('❌ 사용자 목록을 불러오는 중 오류가 발생했습니다: ' + error.message);
+            }
+        }
+
+        // 계정 신청 관리 섹션 로딩
+        async function loadRequestsSection() {
+            if (!SessionManager.hasRole('manager')) {
+                alert('❌ 권한이 없습니다.');
+                return;
+            }
+
+            try {
+                showLoading('requestsLoading');
+                
+                const result = await GoogleAppsScriptAPI.getPendingRequests();
+                
+                if (result.success) {
+                    currentRequestsData = result.requests || [];
+                    displayRequestsResults(currentRequestsData);
+                } else {
+                    throw new Error(result.error || '신청 목록을 불러올 수 없습니다');
+                }
+                
+                hideLoading('requestsLoading');
+                
+            } catch (error) {
+                Utils.debugLog('신청 섹션 로딩 오류:', error);
+                hideLoading('requestsLoading');
+                alert('❌ 신청 목록을 불러오는 중 오류가 발생했습니다: ' + error.message);
+            }
+        }
+
+        // 사용자 목록 결과 표시
+        function displayUsersResults(users) {
+            const tbody = document.querySelector('#usersTable tbody');
+            tbody.innerHTML = '';
+
+            if (users.length === 0) {
+                const row = tbody.insertRow();
+                row.innerHTML = `
+                    <td colspan="8" class="text-center" style="padding: 40px; color: #666;">
+                        👥 등록된 사용자가 없습니다.
+                    </td>
+                `;
+                return;
+            }
+
+            users.forEach((user, index) => {
+                const row = tbody.insertRow();
+                const statusClass = user.status === 'approved' ? 'status-processed' : 'status-pending';
+                const statusText = user.status === 'approved' ? '✅ 활성' : '⏳ 대기중';
+                
+                row.innerHTML = `
+                    <td class="phone-number">${user.username}</td>
+                    <td>${user.name}</td>
+                    <td>${user.email}</td>
+                    <td><span class="status-badge status-${user.role}">${getRoleDisplayName(user.role)}</span></td>
+                    <td><span class="status-badge ${statusClass}">${statusText}</span></td>
+                    <td class="time-display">${Utils.formatDateOnly(user.createdAt) || '-'}</td>
+                    <td class="time-display">${Utils.formatKoreanDateTime(user.lastLogin) || '-'}</td>
+                    <td style="white-space: nowrap;">
+                        <button class="btn btn-primary btn-small" onclick="editUser(${index})" style="margin-right: 5px;">✏️ 수정</button>
+                        ${user.username !== currentUser.username ? 
+                            `<button class="btn btn-danger btn-small" onclick="deleteUser(${index})">🗑️ 삭제</button>` : 
+                            '<span class="text-small">현재 사용자</span>'
+                        }
+                    </td>
+                `;
+            });
+        }
+
+        // 계정 신청 목록 결과 표시
+        function displayRequestsResults(requests) {
+            const tbody = document.querySelector('#requestsTable tbody');
+            const noRequestsMsg = document.getElementById('noRequestsMessage');
+            
+            tbody.innerHTML = '';
+
+            if (requests.length === 0) {
+                showElement('noRequestsMessage');
+                return;
+            }
+
+            hideElement('noRequestsMessage');
+
+            requests.forEach((request, index) => {
+                const row = tbody.insertRow();
+                row.innerHTML = `
+                    <td class="time-display">${Utils.formatKoreanDateTime(request.requestDate)}</td>
+                    <td>${request.name}</td>
+                    <td>${request.email}</td>
+                    <td>${request.phone}</td>
+                    <td>${request.department}</td>
+                    <td><span class="status-badge status-${request.role}">${getRoleDisplayName(request.role)}</span></td>
+                    <td class="phone-number">${request.requestedUsername || '자동 생성'}</td>
+                    <td><span class="status-badge status-pending">⏳ 대기중</span></td>
+                    <td style="white-space: nowrap;">
+                        <button class="btn btn-success btn-small" onclick="openApprovalModal(${index})" style="margin-right: 5px;">
+                            ✅ 승인
+                        </button>
+                        <button class="btn btn-danger btn-small" onclick="rejectRequest(${index})">
+                            ❌ 거부
+                        </button>
+                    </td>
+                `;
+            });
+        }
+
+        // 권한 표시명 반환
+        function getRoleDisplayName(role) {
+            const roleNames = {
+                'admin': '시스템 관리자',
+                'manager': '관리자', 
+                'user': '일반 사용자'
+            };
+            return roleNames[role] || role;
+        }
+
         // OB콜 처리 모달 열기
         function openProcessModal(index) {
             const call = currentCallsData[index];
             currentProcessingCall = { ...call, index };
 
             Utils.debugLog('선택된 콜 데이터:', call);
-            Utils.debugLog('설정된 currentProcessingCall:', currentProcessingCall);
 
             document.getElementById('modalPhoneNumber').textContent = call.phoneNumber;
             document.getElementById('modalCallInfo').textContent = 
@@ -1702,7 +1364,6 @@
                 saveBtn.disabled = true;
                 btnText.textContent = '저장 중...';
 
-                // 디버그 로그 추가
                 Utils.debugLog('현재 처리할 콜 정보:', currentProcessingCall);
 
                 if (!currentProcessingCall) {
@@ -1714,38 +1375,8 @@
                 
                 Utils.debugLog('업데이트할 콜 목록:', callsToUpdate);
 
-                // 업데이트할 콜들의 rowIndex 검증
-                const validCalls = [];
-                for (const call of callsToUpdate) {
-                    Utils.debugLog('처리 중인 개별 콜:', call);
-                    
-                    if (!call.rowIndex) {
-                        Utils.debugLog('rowIndex가 없는 콜 발견:', call);
-                        // rowIndex가 없다면 현재 처리 중인 콜의 rowIndex 사용 시도
-                        if (currentProcessingCall.rowIndex) {
-                            call.rowIndex = currentProcessingCall.rowIndex;
-                            Utils.debugLog('rowIndex를 currentProcessingCall에서 복사:', call.rowIndex);
-                        } else {
-                            throw new Error(`rowIndex가 없습니다. 콜 정보: ${JSON.stringify(call)}`);
-                        }
-                    }
-                    
-                    // rowIndex가 숫자인지 확인
-                    const rowIndex = parseInt(call.rowIndex);
-                    if (isNaN(rowIndex) || rowIndex < 2) {
-                        throw new Error(`잘못된 rowIndex: ${call.rowIndex}`);
-                    }
-                    
-                    validCalls.push({
-                        ...call,
-                        rowIndex: rowIndex
-                    });
-                }
-
-                Utils.debugLog('검증된 콜 목록:', validCalls);
-
                 // 각 콜에 대해 업데이트 실행
-                for (const call of validCalls) {
+                for (const call of callsToUpdate) {
                     const updateData = {
                         rowIndex: call.rowIndex,
                         processStatus: processStatus,
@@ -1755,7 +1386,6 @@
                     
                     Utils.debugLog('전송할 업데이트 데이터:', updateData);
                     
-                    // Apps Script의 updateCall 액션 사용
                     const result = await GoogleAppsScriptAPI.updateCall(updateData);
                     
                     if (!result.success) {
@@ -1770,7 +1400,7 @@
                 // 전체 새로고침 대신 해당 행만 업데이트
                 updateProcessedCallInTable(currentProcessingCall.index, processStatus, processManager);
                 
-                // 성공 메시지 (더 간단하게)
+                // 성공 메시지
                 Utils.showToast(`✅ ${currentProcessingCall.phoneNumber} 처리 완료 (${processStatus})`, 'success');
 
             } catch (error) {
@@ -1797,13 +1427,13 @@
 
             try {
                 // 현재 처리 저장
-                const saveBtn = document.querySelector('#processModal .btn-primary'); // "처리 후 다음" 버튼
+                const saveBtn = document.querySelector('#processModal .btn-primary');
                 const btnText = saveBtn.textContent;
                 
                 saveBtn.disabled = true;
                 saveBtn.textContent = '⏳ 처리 중...';
 
-                // 현재 콜 처리 (saveProcess와 동일한 로직이지만 UI 업데이트만)
+                // 현재 콜 처리
                 const currentIndex = currentProcessingCall.index;
                 const callsToUpdate = currentProcessingCall.groupCalls || [currentProcessingCall];
 
@@ -1945,6 +1575,357 @@
             }
         }
 
+        // 사용자 모달 열기
+        function openUserModal(user = null) {
+            const isEdit = !!user;
+            
+            document.getElementById('userModalTitle').textContent = isEdit ? '✏️ 사용자 수정' : '➕ 사용자 추가';
+            
+            if (isEdit) {
+                document.getElementById('userId').value = user.id;
+                document.getElementById('userUsername').value = user.username;
+                document.getElementById('userUsername').disabled = true;
+                document.getElementById('userPassword').required = false;
+                document.getElementById('userPassword').placeholder = '변경하지 않으려면 비워두세요';
+                document.getElementById('userName').value = user.name;
+                document.getElementById('userEmail').value = user.email;
+                document.getElementById('userRole').value = user.role;
+            } else {
+                document.getElementById('userForm').reset();
+                document.getElementById('userUsername').disabled = false;
+                document.getElementById('userPassword').required = true;
+                document.getElementById('userPassword').placeholder = '6자 이상 입력하세요';
+            }
+
+            hideAlert('userModalError');
+            document.getElementById('userModal').classList.add('show');
+            
+            // 첫 번째 입력 필드에 포커스
+            setTimeout(() => {
+                if (!isEdit) {
+                    document.getElementById('userUsername').focus();
+                } else {
+                    document.getElementById('userName').focus();
+                }
+            }, 100);
+        }
+
+        // 사용자 모달 닫기
+        function closeUserModal() {
+            closeModal('userModal');
+        }
+
+        // 사용자 수정
+        function editUser(index) {
+            const user = currentUsersData[index];
+            openUserModal(user);
+        }
+
+        // 사용자 삭제
+        async function deleteUser(index) {
+            const user = currentUsersData[index];
+            
+            if (confirm(`⚠️ 사용자 '${user.name}'를 삭제하시겠습니까?\n\n이 작업은 되돌릴 수 없습니다.`)) {
+                try {
+                    const result = await GoogleAppsScriptAPI.deleteUser(user.id);
+
+                    if (result.success) {
+                        await loadUsersSection();
+                        alert('✅ 사용자가 삭제되었습니다.');
+                    } else {
+                        alert('❌ 삭제 중 오류가 발생했습니다: ' + result.error);
+                    }
+                } catch (error) {
+                    Utils.debugLog('사용자 삭제 오류:', error);
+                    alert('❌ 삭제 중 오류가 발생했습니다: ' + error.message);
+                }
+            }
+        }
+
+        // 사용자 저장
+        async function saveUser() {
+            const userId = document.getElementById('userId').value;
+            const username = document.getElementById('userUsername').value.trim();
+            const password = document.getElementById('userPassword').value;
+            const name = document.getElementById('userName').value.trim();
+            const email = document.getElementById('userEmail').value.trim();
+            const role = document.getElementById('userRole').value;
+
+            // 유효성 검사
+            if (!username || !name || !email || !role) {
+                showAlert('userModalError', '필수 항목을 모두 입력해주세요.', 'error');
+                return;
+            }
+
+            if (!Utils.isValidEmail(email)) {
+                showAlert('userModalError', '올바른 이메일 주소를 입력해주세요.', 'error');
+                return;
+            }
+
+            if (!userId && !password) {
+                showAlert('userModalError', '새 사용자는 비밀번호가 필요합니다.', 'error');
+                return;
+            }
+
+            if (password) {
+                const passwordValidation = Utils.isValidPassword(password);
+                if (!passwordValidation.valid) {
+                    showAlert('userModalError', passwordValidation.message, 'error');
+                    return;
+                }
+            }
+
+            try {
+                const isEdit = !!userId;
+                
+                // 버튼 상태 변경
+                const saveBtn = document.querySelector('#userModal .btn-success');
+                const btnText = document.getElementById('userSaveBtnText');
+                saveBtn.disabled = true;
+                btnText.textContent = '저장 중...';
+                
+                const userData = {
+                    id: userId || Utils.generateUUID(),
+                    username: username,
+                    name: name,
+                    email: email,
+                    role: role,
+                    status: 'approved',
+                    createdAt: isEdit ? null : Utils.getCurrentDateTime(),
+                    lastLogin: isEdit ? null : null
+                };
+
+                // 비밀번호가 있으면 해시 처리
+                if (password) {
+                    userData.passwordHash = Utils.simpleHash(password, username);
+                }
+
+                let result;
+                if (isEdit) {
+                    result = await GoogleAppsScriptAPI.updateUser(userId, userData);
+                } else {
+                    result = await GoogleAppsScriptAPI.addUser(userData);
+                }
+
+                if (result.success) {
+                    await loadUsersSection();
+                    closeUserModal();
+                    
+                    alert(`✅ ${isEdit ? '사용자가 수정되었습니다.' : '사용자가 추가되었습니다.'}`);
+                } else {
+                    showAlert('userModalError', result.error || '저장 중 오류가 발생했습니다.', 'error');
+                }
+
+            } catch (error) {
+                Utils.debugLog('사용자 저장 오류:', error);
+                showAlert('userModalError', '사용자 저장 중 오류가 발생했습니다: ' + error.message, 'error');
+            } finally {
+                // 버튼 복원
+                const saveBtn = document.querySelector('#userModal .btn-success');
+                const btnText = document.getElementById('userSaveBtnText');
+                saveBtn.disabled = false;
+                btnText.textContent = '💾 저장';
+            }
+        }
+
+        // 계정 신청 승인 모달 열기
+        function openApprovalModal(index) {
+            const request = currentRequestsData[index];
+            
+            document.getElementById('approvalRequestId').value = request.id;
+            document.getElementById('approvalRequestName').textContent = request.name;
+            document.getElementById('approvalRequestInfo').textContent = 
+                `${request.email} | ${request.department} | ${getRoleDisplayName(request.role)}`;
+            
+            // 희망 사용자 ID가 있으면 미리 채워넣기
+            document.getElementById('approvalUsername').value = request.requestedUsername || '';
+            document.getElementById('approvalPassword').value = '';
+            document.getElementById('approvalNote').value = '';
+
+            hideAlert('approvalModalError');
+            document.getElementById('approvalModal').classList.add('show');
+            
+            setTimeout(() => {
+                const usernameField = document.getElementById('approvalUsername');
+                if (usernameField.value) {
+                    document.getElementById('approvalPassword').focus();
+                } else {
+                    usernameField.focus();
+                }
+            }, 100);
+        }
+
+        // 승인 모달 닫기
+        function closeApprovalModal() {
+            closeModal('approvalModal');
+            hideAlert('approvalModalError');
+        }
+
+        // 계정 신청 승인 처리
+        async function approveAccountRequest() {
+            const requestId = document.getElementById('approvalRequestId').value;
+            const username = document.getElementById('approvalUsername').value.trim();
+            const password = document.getElementById('approvalPassword').value;
+            const note = document.getElementById('approvalNote').value.trim();
+
+            if (!username || !password) {
+                showAlert('approvalModalError', '사용자 ID와 임시 비밀번호를 모두 입력해주세요.', 'error');
+                return;
+            }
+
+            const passwordValidation = Utils.isValidPassword(password);
+            if (!passwordValidation.valid) {
+                showAlert('approvalModalError', passwordValidation.message, 'error');
+                return;
+            }
+
+            try {
+                // 버튼 상태 변경
+                const approveBtn = document.querySelector('#approvalModal .btn-success');
+                const btnText = document.getElementById('approvalSaveBtnText');
+                approveBtn.disabled = true;
+                btnText.textContent = '승인 처리 중...';
+
+                const approvalData = {
+                    username: username,
+                    password: password,
+                    note: note
+                };
+
+                const result = await GoogleAppsScriptAPI.approveRequest(requestId, approvalData);
+
+                if (result.success) {
+                    closeApprovalModal();
+                    await loadRequestsSection(); // 목록 새로고침
+                    
+                    alert(`✅ 계정이 승인되어 생성되었습니다!\n\n👤 사용자: ${result.user.name}\n🆔 사용자 ID: ${result.user.username}\n📧 이메일: ${result.user.email}\n\n💡 생성된 임시 비밀번호를 사용자에게 전달해주세요.`);
+                } else {
+                    showAlert('approvalModalError', result.error || '승인 처리 중 오류가 발생했습니다.', 'error');
+                }
+
+            } catch (error) {
+                Utils.debugLog('승인 처리 오류:', error);
+                showAlert('approvalModalError', '승인 처리 중 오류가 발생했습니다: ' + error.message, 'error');
+            } finally {
+                // 버튼 복원
+                const approveBtn = document.querySelector('#approvalModal .btn-success');
+                const btnText = document.getElementById('approvalSaveBtnText');
+                approveBtn.disabled = false;
+                btnText.textContent = '✅ 승인 및 계정 생성';
+            }
+        }
+
+        // 계정 신청 거부
+        async function rejectRequest(index) {
+            const request = currentRequestsData[index];
+            
+            const reason = prompt(`⚠️ 계정 신청을 거부하시겠습니까?\n\n신청자: ${request.name}\n이메일: ${request.email}\n\n거부 사유를 입력해주세요 (선택사항):`);
+            
+            if (reason === null) return; // 취소한 경우
+
+            try {
+                const result = await GoogleAppsScriptAPI.rejectRequest(request.id, reason);
+
+                if (result.success) {
+                    await loadRequestsSection(); // 목록 새로고침
+                    alert(`❌ 계정 신청이 거부되었습니다.\n\n신청자: ${request.name}\n사유: ${reason || '사유 없음'}`);
+                } else {
+                    alert('❌ 거부 처리 중 오류가 발생했습니다: ' + result.error);
+                }
+
+            } catch (error) {
+                Utils.debugLog('거부 처리 오류:', error);
+                alert('❌ 거부 처리 중 오류가 발생했습니다: ' + error.message);
+            }
+        }
+
+        // 계정 신청 모달 열기
+        function openAccountRequestModal() {
+            document.getElementById('accountRequestForm').reset();
+            hideAlert('accountRequestError');
+            hideAlert('accountRequestSuccess');
+            document.getElementById('accountRequestModal').classList.add('show');
+            
+            // 첫 번째 입력 필드에 포커스
+            setTimeout(() => {
+                document.getElementById('requestName').focus();
+            }, 100);
+        }
+
+        // 계정 신청 모달 닫기
+        function closeAccountRequestModal() {
+            closeModal('accountRequestModal');
+        }
+
+        // 계정 신청서 제출
+        async function submitAccountRequest() {
+            const formData = {
+                name: document.getElementById('requestName').value.trim(),
+                email: document.getElementById('requestEmail').value.trim(),
+                phone: document.getElementById('requestPhone').value.trim(),
+                department: document.getElementById('requestDepartment').value.trim(),
+                position: document.getElementById('requestPosition').value.trim(),
+                role: document.getElementById('requestRole').value,
+                reason: document.getElementById('requestReason').value.trim(),
+                userId: document.getElementById('requestUserId').value.trim()
+            };
+
+            // 유효성 검사
+            if (!formData.name || !formData.email || !formData.phone || 
+                !formData.department || !formData.role || !formData.reason) {
+                showAlert('accountRequestError', '필수 항목(*)을 모두 입력해주세요.', 'error');
+                return;
+            }
+
+            if (!Utils.isValidEmail(formData.email)) {
+                showAlert('accountRequestError', '올바른 이메일 주소를 입력해주세요.', 'error');
+                return;
+            }
+
+            // 전화번호 형식 간단 체크
+            const phoneRegex = /^[\d\-\+\(\)\s]{10,}$/;
+            if (!phoneRegex.test(formData.phone)) {
+                showAlert('accountRequestError', '올바른 전화번호를 입력해주세요.', 'error');
+                return;
+            }
+
+            try {
+                // 버튼 상태 변경
+                const submitBtn = document.querySelector('#accountRequestModal .btn-primary');
+                const btnText = document.getElementById('accountRequestBtnText');
+                submitBtn.disabled = true;
+                btnText.textContent = '📧 제출 중...';
+
+                // 현재 날짜/시간 추가
+                formData.requestDate = new Date().toLocaleString('ko-KR');
+                
+                const result = await GoogleAppsScriptAPI.submitAccountRequest(formData);
+
+                if (result.success) {
+                    showAlert('accountRequestSuccess', 
+                        '✅ 계정 신청이 완료되었습니다!\n관리자 검토 후 승인됩니다.', 'success');
+                    
+                    // 3초 후 모달 닫기
+                    setTimeout(() => {
+                        closeAccountRequestModal();
+                    }, 3000);
+                } else {
+                    throw new Error(result.error || '신청서 제출에 실패했습니다.');
+                }
+
+            } catch (error) {
+                Utils.debugLog('계정 신청 오류:', error);
+                showAlert('accountRequestError', `제출 실패: ${error.message}`, 'error');
+
+            } finally {
+                // 버튼 복원
+                const submitBtn = document.querySelector('#accountRequestModal .btn-primary');
+                const btnText = document.getElementById('accountRequestBtnText');
+                submitBtn.disabled = false;
+                btnText.textContent = '📧 신청서 제출';
+            }
+        }
+
         // 비밀번호 표시/숨기기 토글
         function togglePassword(inputId) {
             const input = document.getElementById(inputId);
@@ -2002,94 +1983,6 @@
         // 로딩 숨기기
         function hideLoading(elementId) {
             hideElement(elementId);
-        }
-
-        // 계정 신청 모달 열기
-        function openAccountRequestModal() {
-            document.getElementById('accountRequestForm').reset();
-            hideAlert('accountRequestError');
-            hideAlert('accountRequestSuccess');
-            document.getElementById('accountRequestModal').classList.add('show');
-            
-            // 첫 번째 입력 필드에 포커스
-            setTimeout(() => {
-                document.getElementById('requestName').focus();
-            }, 100);
-        }
-
-        // 계정 신청 모달 닫기
-        function closeAccountRequestModal() {
-            closeModal('accountRequestModal');
-        }
-
-        // 계정 신청서 제출 (스프레드시트에 저장)
-        async function submitAccountRequest() {
-            const formData = {
-                name: document.getElementById('requestName').value.trim(),
-                email: document.getElementById('requestEmail').value.trim(),
-                phone: document.getElementById('requestPhone').value.trim(),
-                department: document.getElementById('requestDepartment').value.trim(),
-                position: document.getElementById('requestPosition').value.trim(),
-                role: document.getElementById('requestRole').value,
-                reason: document.getElementById('requestReason').value.trim(),
-                userId: document.getElementById('requestUserId').value.trim()
-            };
-
-            // 유효성 검사
-            if (!formData.name || !formData.email || !formData.phone || 
-                !formData.department || !formData.role || !formData.reason) {
-                showAlert('accountRequestError', '필수 항목(*)을 모두 입력해주세요.', 'error');
-                return;
-            }
-
-            if (!Utils.isValidEmail(formData.email)) {
-                showAlert('accountRequestError', '올바른 이메일 주소를 입력해주세요.', 'error');
-                return;
-            }
-
-            // 전화번호 형식 간단 체크
-            const phoneRegex = /^[\d\-\+\(\)\s]{10,}$/;
-            if (!phoneRegex.test(formData.phone)) {
-                showAlert('accountRequestError', '올바른 전화번호를 입력해주세요.', 'error');
-                return;
-            }
-
-            try {
-                // 버튼 상태 변경
-                const submitBtn = document.querySelector('#accountRequestModal .btn-primary');
-                const btnText = document.getElementById('accountRequestBtnText');
-                submitBtn.disabled = true;
-                btnText.textContent = '📧 제출 중...';
-
-                // 현재 날짜/시간 추가
-                formData.requestDate = new Date().toLocaleString('ko-KR');
-                
-                // Apps Script를 통한 스프레드시트 저장
-                const result = await GoogleAppsScriptAPI.submitAccountRequest(formData);
-
-                if (result.success) {
-                    showAlert('accountRequestSuccess', 
-                        '✅ 계정 신청이 완료되었습니다!\n관리자 검토 후 승인됩니다.', 'success');
-                    
-                    // 3초 후 모달 닫기
-                    setTimeout(() => {
-                        closeAccountRequestModal();
-                    }, 3000);
-                } else {
-                    throw new Error(result.error || '신청서 제출에 실패했습니다.');
-                }
-
-            } catch (error) {
-                Utils.debugLog('계정 신청 오류:', error);
-                showAlert('accountRequestError', `제출 실패: ${error.message}`, 'error');
-
-            } finally {
-                // 버튼 복원
-                const submitBtn = document.querySelector('#accountRequestModal .btn-primary');
-                const btnText = document.getElementById('accountRequestBtnText');
-                submitBtn.disabled = false;
-                btnText.textContent = '📧 신청서 제출';
-            }
         }
     </script>
 </body>
