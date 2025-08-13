@@ -138,18 +138,18 @@
                 <div id="loadingMessage" class="loading hidden">
                     데이터를 조회하고 있습니다<span class="spinner"></span>
                 </div>
-                <div id="loadingMessage" class="loading hidden">
-                    데이터를 조회하고 있습니다<span class="spinner"></span>
-                </div>
 
                 <div id="callsResults" class="results-container hidden">
                     <div class="results-header">
                         <h3 id="resultsCount">조회 결과</h3>
                         <div>
-                            <button class="btn btn-secondary btn-small" onclick="searchCalls()" title="서버에서 최신 데이터를 가져옵니다">
+                            <button class="btn btn-secondary btn-small" onclick="scrollToTop()" title="테이블 상단으로 이동">
+                                ⬆️ 상단
+                            </button>
+                            <button class="btn btn-secondary btn-small" onclick="searchCalls()" title="서버에서 최신 데이터를 가져옵니다" style="margin-left: 5px;">
                                 🔄 새로고침
                             </button>
-                            <button class="btn btn-primary btn-small" onclick="exportToCSV()" style="margin-left: 8px;">📥 CSV 내보내기</button>
+                            <button class="btn btn-primary btn-small" onclick="exportToCSV()" style="margin-left: 5px;">📥 CSV 내보내기</button>
                         </div>
                     </div>
                     
@@ -467,7 +467,7 @@
                 
                 <div class="form-group">
                     <label for="requestUserId">희망 사용자 ID (사번)</label>
-                    <input type="text" id="requestUserId" placeholder="사번을 입력하세요 (예: T2025001)">
+                    <input type="text" id="requestUserId" placeholder="사번을 입력하세요 (예: TS9999)" style="text-transform: uppercase; width: 100%; min-width: 280px;">
                     <small class="text-small">본인의 사번을 입력해주세요. 비워두시면 관리자가 사번으로 생성해 드립니다.</small>
                 </div>
             </form>
@@ -1236,6 +1236,17 @@
             });
         }
 
+        // 테이블 상단으로 스크롤
+        function scrollToTop() {
+            const resultsContent = document.querySelector('.results-content');
+            if (resultsContent) {
+                resultsContent.scrollTo({
+                    top: 0,
+                    behavior: 'smooth'
+                });
+            }
+        }
+
         // CSV 내보내기 (순번 추가)
         function exportToCSV() {
             if (currentCallsData.length === 0) {
@@ -1710,11 +1721,24 @@
                     setTimeout(() => {
                         openProcessModal(nextIndex);
                         
-                        // 테이블에서 해당 행으로 스크롤
+                        // 테이블에서 해당 행으로 부드럽게 스크롤 (고정 헤더 고려)
                         const tableBody = document.querySelector('#callsTable tbody');
                         const targetRow = tableBody.querySelectorAll('tr')[nextIndex];
                         if (targetRow) {
-                            targetRow.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                            // 테이블 컨테이너를 기준으로 스크롤
+                            const resultsContent = document.querySelector('.results-content');
+                            const targetRowTop = targetRow.offsetTop;
+                            const containerHeight = resultsContent.clientHeight;
+                            const rowHeight = targetRow.offsetHeight;
+                            
+                            // 행이 상단 1/3 지점에 오도록 스크롤 조정
+                            const scrollTop = Math.max(0, targetRowTop - (containerHeight / 3));
+                            
+                            resultsContent.scrollTo({
+                                top: scrollTop,
+                                behavior: 'smooth'
+                            });
+                            
                             // 행 하이라이트
                             targetRow.style.backgroundColor = '#fef3c7';
                             setTimeout(() => {
