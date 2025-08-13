@@ -5,6 +5,47 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>!투어비스 항공(국제선) Missing Call 처리 시스템</title>
     <link rel="stylesheet" href="styles.css">
+    <style>
+        /* 정렬 가능한 헤더 스타일 */
+        .sortable-header {
+            cursor: pointer;
+            user-select: none;
+            position: relative;
+            padding-right: 20px !important;
+        }
+        
+        .sortable-header:hover {
+            background-color: rgba(59, 130, 246, 0.1);
+        }
+        
+        .sort-arrow {
+            position: absolute;
+            right: 5px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 12px;
+            color: #666;
+            opacity: 0.7;
+        }
+        
+        .sort-arrow.active {
+            color: #3b82f6;
+            opacity: 1;
+            font-weight: bold;
+        }
+        
+        .sort-arrow.asc::after {
+            content: "▲";
+        }
+        
+        .sort-arrow.desc::after {
+            content: "▼";
+        }
+        
+        .sort-arrow.none::after {
+            content: "↕️";
+        }
+    </style>
 </head>
 <body>
     <!-- 연결 상태 표시 -->
@@ -141,11 +182,17 @@
                             <thead>
                                 <tr>
                                     <th>발생일</th>
-                                    <th>인입시간</th>
+                                    <th class="sortable-header" onclick="sortTable('startTime')" title="클릭하여 정렬">
+                                        인입시간
+                                        <span id="sortArrow-startTime" class="sort-arrow desc active"></span>
+                                    </th>
                                     <th>대기시간(분)</th>
                                     <th>전화번호</th>
                                     <th>인입큐</th>
-                                    <th>중복횟수</th>
+                                    <th class="sortable-header" onclick="sortTable('callCount')" title="클릭하여 정렬">
+                                        중복횟수
+                                        <span id="sortArrow-callCount" class="sort-arrow none"></span>
+                                    </th>
                                     <th>처리상태</th>
                                     <th>처리담당자</th>
                                     <th>액션</th>
@@ -461,6 +508,12 @@
         let currentProcessingCall = null;
         let connectionCheckInterval = null;
 
+        // 정렬 상태 관리
+        let currentSort = {
+            column: 'startTime',    // 기본 정렬 칼럼: 인입시간
+            direction: 'desc'       // 기본 정렬 방향: 내림차순 (늦은 시간부터)
+        };
+
         // 페이지 로드시 초기화
         document.addEventListener('DOMContentLoaded', function() {
             initializeApp();
@@ -526,6 +579,78 @@
             } catch (error) {
                 Utils.debugLog('초기화 오류:', error);
                 showError('시스템 초기화 중 오류가 발생했습니다: ' + error.message);
+            }
+        }
+
+        // 테이블 정렬 함수
+        function sortTable(column) {
+            Utils.debugLog('정렬 요청:', { column, currentSort });
+            
+            // 현재 정렬 칼럼과 같으면 방향 변경, 다르면 새로운 칼럼으로 오름차순
+            if (currentSort.column === column) {
+                if (currentSort.direction === 'asc') {
+                    currentSort.direction = 'desc';
+                } else if (currentSort.direction === 'desc') {
+                    currentSort.direction = 'none';
+                } else {
+                    currentSort.direction = 'asc';
+                }
+            } else {
+                currentSort.column = column;
+                currentSort.direction = 'asc';
+            }
+            
+            // 정렬 상태에 따라 데이터 정렬
+            let sortedData = [...currentCallsData];
+            
+            if (currentSort.direction !== 'none') {
+                sortedData.sort((a, b) => {
+                    let valueA, valueB;
+                    
+                    if (column === 'startTime') {
+                        // 인입시간 정렬 - 날짜와 시간을 결합하여 비교
+                        const dateTimeA = new Date(`${a.date} ${a.startTime}`);
+                        const dateTimeB = new Date(`${b.date} ${b.startTime}`);
+                        valueA = dateTimeA.getTime();
+                        valueB = dateTimeB.getTime();
+                    } else if (column === 'callCount') {
+                        // 중복횟수 정렬 - 숫자 비교
+                        valueA = parseInt(a.callCount) || 0;
+                        valueB = parseInt(b.callCount) || 0;
+                    }
+                    
+                    if (currentSort.direction === 'asc') {
+                        return valueA - valueB;
+                    } else {
+                        return valueB - valueA;
+                    }
+                });
+            }
+            
+            // 정렬 화살표 업데이트
+            updateSortArrows();
+            
+            // 테이블 다시 그리기
+            displayCallsResultsWithData(sortedData);
+            
+            Utils.debugLog('정렬 완료:', { column, direction: currentSort.direction, dataLength: sortedData.length });
+        }
+
+        // 정렬 화살표 업데이트
+        function updateSortArrows() {
+            // 모든 화살표 초기화
+            const arrows = document.querySelectorAll('.sort-arrow');
+            arrows.forEach(arrow => {
+                arrow.className = 'sort-arrow none';
+            });
+            
+            // 현재 정렬 칼럼의 화살표 업데이트
+            const currentArrow = document.getElementById(`sortArrow-${currentSort.column}`);
+            if (currentArrow) {
+                currentArrow.className = `sort-arrow ${currentSort.direction}`;
+                if (currentSort.direction !== 'none') {
+                    currentArrow.classList.add('active');
+                }
             }
         }
 
@@ -754,6 +879,12 @@
                     currentUsersData = [];
                     currentRequestsData = [];
                     currentProcessingCall = null;
+                    
+                    // 정렬 상태 초기화
+                    currentSort = {
+                        column: 'startTime',
+                        direction: 'desc'
+                    };
                     
                     // 로그인 화면으로 이동
                     showLoginScreen();
@@ -1360,48 +1491,70 @@ function displayRequestsResults(requests) {
             return processedData;
         }
 
-        // 콜 데이터 결과 표시
-function displayCallsResults(data) {
-    const countDiv = document.getElementById('resultsCount');
-    const tbody = document.querySelector('#callsTable tbody');
-    const processFilter = document.getElementById('processFilter').value;
-    
-    // 필터 상태에 따른 제목 변경
-    let filterText = '';
-    if (processFilter === 'processed') {
-        filterText = ' (처리 완료만)';
-    } else if (processFilter === 'pending') {
-        filterText = ' (미처리만)';
-    }
+        // 콜 데이터 결과 표시 (기본 정렬 적용)
+        function displayCallsResults(data) {
+            // 기본 정렬 상태 설정 (인입시간 내림차순)
+            currentSort = {
+                column: 'startTime',
+                direction: 'desc'
+            };
+            
+            // 기본 정렬 적용
+            const sortedData = [...data].sort((a, b) => {
+                const dateTimeA = new Date(`${a.date} ${a.startTime}`);
+                const dateTimeB = new Date(`${b.date} ${b.startTime}`);
+                return dateTimeB.getTime() - dateTimeA.getTime(); // 내림차순 (늦은 시간부터)
+            });
+            
+            // 정렬 화살표 업데이트
+            updateSortArrows();
+            
+            // 실제 테이블 표시
+            displayCallsResultsWithData(sortedData);
+        }
 
-    countDiv.textContent = `📊 조회 결과: ${data.length}건${filterText}`;
-    tbody.innerHTML = '';
+        // 콜 데이터 결과 표시 (데이터 전달받는 버전)
+        function displayCallsResultsWithData(data) {
+            const countDiv = document.getElementById('resultsCount');
+            const tbody = document.querySelector('#callsTable tbody');
+            const processFilter = document.getElementById('processFilter').value;
+            
+            // 필터 상태에 따른 제목 변경
+            let filterText = '';
+            if (processFilter === 'processed') {
+                filterText = ' (처리 완료만)';
+            } else if (processFilter === 'pending') {
+                filterText = ' (미처리만)';
+            }
 
-    data.forEach((call, index) => {
-        const row = tbody.insertRow();
-        const waitMinutes = Math.round(call.duration / 60);
-        
-        row.innerHTML = `
-            <td>${Utils.formatDateOnly(call.date)}</td>
-            <td class="time-display">${Utils.formatTimeOnly(call.startTime)}</td>
-            <td class="time-display">${waitMinutes}분</td>
-            <td class="phone-number">${call.phoneNumber}</td>
-            <td>${call.queue}</td>
-            <td><span class="call-count">${call.callCount}번</span></td>
-            <td>
-                <span class="status-badge ${call.processStatus ? 'status-processed' : 'status-pending'}">
-                    ${call.processStatus ? '✅ 처리완료' : '⏳ 미처리'}
-                </span>
-            </td>
-            <td>${call.processManager || '-'}</td>
-            <td>
-                <button class="btn btn-primary btn-small" onclick="openProcessModal(${index})">
-                    ${call.processStatus ? '✏️ 수정' : '📞 처리'}
-                </button>
-            </td>
-        `;
-    });
-}
+            countDiv.textContent = `📊 조회 결과: ${data.length}건${filterText}`;
+            tbody.innerHTML = '';
+
+            data.forEach((call, index) => {
+                const row = tbody.insertRow();
+                const waitMinutes = Math.round(call.duration / 60);
+                
+                row.innerHTML = `
+                    <td>${Utils.formatDateOnly(call.date)}</td>
+                    <td class="time-display">${Utils.formatTimeOnly(call.startTime)}</td>
+                    <td class="time-display">${waitMinutes}분</td>
+                    <td class="phone-number">${call.phoneNumber}</td>
+                    <td>${call.queue}</td>
+                    <td><span class="call-count">${call.callCount}번</span></td>
+                    <td>
+                        <span class="status-badge ${call.processStatus ? 'status-processed' : 'status-pending'}">
+                            ${call.processStatus ? '✅ 처리완료' : '⏳ 미처리'}
+                        </span>
+                    </td>
+                    <td>${call.processManager || '-'}</td>
+                    <td>
+                        <button class="btn btn-primary btn-small" onclick="openProcessModal(${currentCallsData.findIndex(c => c.phoneNumber === call.phoneNumber && c.startTime === call.startTime)})">
+                            ${call.processStatus ? '✏️ 수정' : '📞 처리'}
+                        </button>
+                    </td>
+                `;
+            });
+        }
 
         // CSV 내보내기
 function exportToCSV() {
