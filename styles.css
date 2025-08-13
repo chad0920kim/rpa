@@ -1,4 +1,4 @@
-/* styles.css - 투어비스 Missing Call 시스템 최적화 스타일 */
+/* styles.css - 투어비스 Missing Call 시스템 최적화 스타일 (UI 개선 버전) */
 
 /* 기본 리셋 및 레이아웃 */
 * {
@@ -175,6 +175,29 @@ body {
 .form-group textarea {
     resize: vertical;
     min-height: 80px;
+}
+
+/* ⭐ 새로운 스타일: 모달 폼 레이아웃 개선 */
+.form-row {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 15px;
+}
+
+.form-group.flex-half {
+    flex: 1;
+    margin-bottom: 0;
+}
+
+.form-group.full-width {
+    width: 100%;
+    margin-bottom: 15px;
+}
+
+.form-group.full-width textarea {
+    width: 100%;
+    min-height: 80px;
+    resize: vertical;
 }
 
 .password-container {
@@ -401,6 +424,16 @@ td {
     color: #991b1b; 
 }
 
+.status-warning { 
+    background: #fef3c7; 
+    color: #92400e; 
+}
+
+.status-rejected { 
+    background: #fee2e2; 
+    color: #991b1b; 
+}
+
 .status-admin { 
     background: #dbeafe; 
     color: #1e40af; 
@@ -419,11 +452,6 @@ td {
 .status-approved {
     background: #d1fae5;
     color: #065f46;
-}
-
-.status-rejected {
-    background: #fee2e2;
-    color: #991b1b;
 }
 
 .call-count {
@@ -450,6 +478,35 @@ td {
 
 .font-bold {
     font-weight: 600;
+}
+
+/* ⭐ 새로운 스타일: 콜 정보 카드 */
+.call-info-card {
+    background: #f8f9fa;
+    padding: 12px;
+    border-radius: 8px;
+    margin-top: 10px;
+    border-left: 4px solid #667eea;
+}
+
+.call-info-row {
+    margin-bottom: 5px;
+    font-size: 0.9rem;
+}
+
+.call-info-row:last-child {
+    margin-bottom: 0;
+}
+
+.info-label {
+    font-weight: 600;
+    color: #374151;
+    margin-right: 8px;
+}
+
+.info-details {
+    color: #6b7280;
+    font-size: 0.85rem;
 }
 
 /* 로딩 메시지 */
@@ -757,6 +814,17 @@ td {
         flex-direction: column;
         gap: 6px;
     }
+
+    /* ⭐ 모바일에서 폼 행 세로 배치 */
+    .form-row {
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .form-group.flex-half {
+        flex: none;
+        margin-bottom: 10px;
+    }
 }
 
 @media (max-width: 480px) {
@@ -780,5 +848,15 @@ td {
     .btn-small {
         padding: 3px 6px;
         font-size: 0.65rem;
+    }
+
+    .modal-content {
+        padding: 15px;
+        margin: 10px;
+    }
+
+    .call-info-card {
+        padding: 8px;
+        font-size: 0.85rem;
     }
 }
