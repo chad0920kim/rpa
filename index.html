@@ -154,33 +154,37 @@
                     </div>
                     
                     <div class="results-content">
-                        <div class="table-container">
-                            <table id="callsTable">
-                                <thead>
-                                    <tr>
-                                        <th>순번</th>
-                                        <th>발생일</th>
-                                        <th class="sortable-header" onclick="sortTable('startTime')" title="클릭하여 정렬">
-                                            인입시간
-                                            <span id="sortArrow-startTime" class="sort-arrow desc active"></span>
-                                        </th>
-                                        <th>대기시간(분)</th>
-                                        <th>전화번호</th>
-                                        <th>인입큐</th>
-                                        <th class="sortable-header" onclick="sortTable('callCount')" title="클릭하여 정렬">
-                                            중복횟수
-                                            <span id="sortArrow-callCount" class="sort-arrow none"></span>
-                                        </th>
-                                        <th>처리상태</th>
-                                        <th>처리담당자</th>
-                                        <th>액션</th>
-                                    </tr>
-                                </thead>
-                                <tbody></tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
+    <!-- 테이블 래퍼 추가 -->
+    <div class="table-scroll-wrapper">
+        <div class="table-container">
+            <table id="callsTable">
+                <thead>
+                    <tr>
+                        <th style="position: sticky; top: 0; z-index: 200; background: #f8f9fa;">순번</th>
+                        <th style="position: sticky; top: 0; z-index: 200; background: #f8f9fa;">발생일</th>
+                        <th class="sortable-header" onclick="sortTable('startTime')" title="클릭하여 정렬" 
+                            style="position: sticky; top: 0; z-index: 200; background: #f8f9fa;">
+                            인입시간
+                            <span id="sortArrow-startTime" class="sort-arrow desc active"></span>
+                        </th>
+                        <th style="position: sticky; top: 0; z-index: 200; background: #f8f9fa;">대기시간(분)</th>
+                        <th style="position: sticky; top: 0; z-index: 200; background: #f8f9fa;">전화번호</th>
+                        <th style="position: sticky; top: 0; z-index: 200; background: #f8f9fa;">인입큐</th>
+                        <th class="sortable-header" onclick="sortTable('callCount')" title="클릭하여 정렬"
+                            style="position: sticky; top: 0; z-index: 200; background: #f8f9fa;">
+                            중복횟수
+                            <span id="sortArrow-callCount" class="sort-arrow none"></span>
+                        </th>
+                        <th style="position: sticky; top: 0; z-index: 200; background: #f8f9fa;">처리상태</th>
+                        <th style="position: sticky; top: 0; z-index: 200; background: #f8f9fa;">처리담당자</th>
+                        <th style="position: sticky; top: 0; z-index: 200; background: #f8f9fa;">액션</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </div>
+</div>
 
                 <div id="noDataMessage" class="no-data-message text-center hidden">
                     <h3 id="noDataTitle">📭 조회된 데이터가 없습니다</h3>
