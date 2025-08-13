@@ -344,7 +344,7 @@
         </div>
     </div>
 
-    <!-- OB콜 처리 모달 -->
+    <!-- OB콜 처리 모달 - UI 개선 버전 -->
     <div id="processModal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
@@ -361,8 +361,9 @@
             </div>
             
             <form id="processForm">
+                <!-- 처리 상태와 담당자를 같은 행에 배치 -->
                 <div class="form-row">
-                    <div class="form-group">
+                    <div class="form-group flex-half">
                         <label for="processStatus">처리 상태 *</label>
                         <select id="processStatus" required>
                             <option value="">선택해주세요</option>
@@ -373,12 +374,13 @@
                         </select>
                     </div>
                     
-                    <div class="form-group">
+                    <div class="form-group flex-half">
                         <label for="processManager">담당자 *</label>
                         <input type="text" id="processManager" required placeholder="담당자명을 입력하세요" autocomplete="name">
                     </div>
                 </div>
 
+                <!-- 처리 메모는 전체 너비로 -->
                 <div class="form-group full-width">
                     <label for="processNote">처리 메모</label>
                     <textarea id="processNote" rows="3" placeholder="처리 내용이나 특이사항을 입력하세요 (선택사항)"></textarea>
@@ -1582,7 +1584,7 @@
             }
         }
 
-        // 처리 후 다음 미처리 건으로 이동
+        // ⭐ 수정: 오류 함수 이름 변경
         async function saveAndNext() {
             const processStatus = document.getElementById('processStatus').value;
             const processManager = document.getElementById('processManager').value.trim();
@@ -1601,7 +1603,7 @@
                 saveBtn.textContent = '⏳ 저장 중...';
 
                 // 현재 콜 처리
-                const currentIndex = currentProcessingCall.index;
+                const currentIndex = currentProcessingCall.tableIndex; // ⭐ index → tableIndex로 수정
                 const callsToUpdate = currentProcessingCall.groupCalls || [currentProcessingCall];
 
                 for (const call of callsToUpdate) {
@@ -1626,24 +1628,26 @@
                     }
                 }
 
-                // 현재 처리된 항목 UI 업데이트
-                updateProcessedCallInTable(currentIndex, processStatus, processManager);
+                // ⭐ 수정: 함수 이름 변경 updateProcessedCallInTable → updateTableRow
+                updateTableRow(currentIndex, processStatus, processManager);
 
-                // 다음 미처리 건 찾기
+                // 다음 미처리 건 찾기 (currentCallsData에서)
                 let nextIndex = -1;
-                for (let i = currentIndex + 1; i < currentCallsData.length; i++) {
-                    if (!currentCallsData[i].processStatus || currentCallsData[i].processStatus.trim() === '') {
-                        nextIndex = i;
-                        break;
-                    }
-                }
-
-                // 다음 건이 없으면 처음부터 다시 찾기
-                if (nextIndex === -1) {
-                    for (let i = 0; i < currentIndex; i++) {
-                        if (!currentCallsData[i].processStatus || currentCallsData[i].processStatus.trim() === '') {
+                if (window.currentTableData && window.currentTableData.length > 0) {
+                    for (let i = currentIndex + 1; i < window.currentTableData.length; i++) {
+                        if (!window.currentTableData[i].processStatus || window.currentTableData[i].processStatus.trim() === '') {
                             nextIndex = i;
                             break;
+                        }
+                    }
+
+                    // 다음 건이 없으면 처음부터 다시 찾기
+                    if (nextIndex === -1) {
+                        for (let i = 0; i < currentIndex; i++) {
+                            if (!window.currentTableData[i].processStatus || window.currentTableData[i].processStatus.trim() === '') {
+                                nextIndex = i;
+                                break;
+                            }
                         }
                     }
                 }
