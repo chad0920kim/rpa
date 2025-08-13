@@ -1,4 +1,4 @@
-// config.js - GitHub Pages용 설정 파일
+// config.js - GitHub Pages용 설정 파일 (날짜 문제 수정 완료 버전)
 // ⚠️ 이 파일은 공개적으로 접근 가능하므로 민감한 정보를 포함하지 마세요
 
 const CONFIG = {
@@ -104,7 +104,7 @@ const CONFIG = {
     ENVIRONMENT: {
         IS_GITHUB_PAGES: true,
         DEBUG_MODE: true,
-        VERSION: '1.0.0'
+        VERSION: '1.3.0'
     },
     
     // UI 설정
@@ -124,7 +124,7 @@ const CONFIG = {
     }
 };
 
-// 유틸리티 함수들
+// 유틸리티 함수들 (날짜 문제 수정 완료 버전)
 const Utils = {
     // 간단한 해시 함수 (클라이언트용)
     simpleHash(text, salt = '') {
@@ -148,69 +148,85 @@ const Utils = {
         return new Date().toLocaleString('ko-KR');
     },
     
-    // ⭐ 날짜만 표시 (YYYY-MM-DD) - 시간대 문제 수정
+    // ⭐ 핵심 수정: 날짜만 표시 (YYYY-MM-DD) - UTC 변환 완전 차단
     formatDateOnly(dateTimeStr) {
         try {
             if (!dateTimeStr) return '';
             
-            // ISO 문자열에서 날짜 부분만 추출 (시간대 변환 없이)
+            // 1. 이미 YYYY-MM-DD 형식인지 확인
+            if (typeof dateTimeStr === 'string' && dateTimeStr.match(/^\d{4}-\d{2}-\d{2}$/)) {
+                return dateTimeStr;
+            }
+            
+            // 2. ISO 형식 문자열에서 날짜 부분 추출 (T나 공백 기준)
             if (typeof dateTimeStr === 'string') {
                 if (dateTimeStr.includes('T')) {
                     return dateTimeStr.split('T')[0];
                 }
-                // 이미 날짜만 있는 경우 (YYYY-MM-DD)
-                if (dateTimeStr.match(/^\d{4}-\d{2}-\d{2}$/)) {
-                    return dateTimeStr;
+                if (dateTimeStr.includes(' ')) {
+                    const datePart = dateTimeStr.split(' ')[0];
+                    // YYYY-MM-DD 형식인지 재확인
+                    if (datePart.match(/^\d{4}-\d{2}-\d{2}$/)) {
+                        return datePart;
+                    }
                 }
-                // 공백으로 분리된 날짜 시간 형태에서 날짜만 추출
-                return dateTimeStr.split(' ')[0];
+                // 한국어 날짜 형식 처리 (YYYY. MM. DD 등)
+                if (dateTimeStr.includes('.')) {
+                    const parts = dateTimeStr.split('.').map(p => p.trim());
+                    if (parts.length >= 3 && parts[0].length === 4) {
+                        const year = parts[0];
+                        const month = parts[1].padStart(2, '0');
+                        const day = parts[2].split(' ')[0].padStart(2, '0'); // 시간 부분 제거
+                        return `${year}-${month}-${day}`;
+                    }
+                }
+                return dateTimeStr; // 처리할 수 없으면 원본 반환
             }
             
-            // Date 객체인 경우 - 로컬 시간대 기준으로 날짜 추출
+            // 3. Date 객체인 경우 - 절대 UTC 변환하지 않고 로컬 메서드만 사용
             if (dateTimeStr instanceof Date) {
-                // UTC 변환 대신 로컬 시간대 기준으로 날짜 생성
                 const year = dateTimeStr.getFullYear();
                 const month = String(dateTimeStr.getMonth() + 1).padStart(2, '0');
                 const day = String(dateTimeStr.getDate()).padStart(2, '0');
                 return `${year}-${month}-${day}`;
             }
             
-            return dateTimeStr;
+            return String(dateTimeStr || '');
         } catch (error) {
-            console.error('날짜 포맷 오류:', error);
-            return dateTimeStr || '';
+            console.error('날짜 포맷 오류:', error, 'Input:', dateTimeStr);
+            return String(dateTimeStr || '');
         }
     },
     
-    // ⭐ 시간만 표시 (HH:MM:SS)
+    // ⭐ 핵심 수정: 시간만 표시 (HH:MM:SS) - 문자열 처리 우선
     formatTimeOnly(dateTimeStr) {
         try {
             if (!dateTimeStr) return '';
             
-            if (typeof dateTimeStr === 'string') {
-                // ISO 문자열에서 시간 부분 추출
-                if (dateTimeStr.includes('T')) {
-                    const timePart = dateTimeStr.split('T')[1];
-                    if (timePart) {
-                        // +09:00이나 Z 제거하고 시간만
-                        return timePart.split('+')[0].split('Z')[0].split('.')[0];
-                    }
-                }
-                
-                // 이미 시간만 있는 경우 (HH:MM:SS 형태)
-                if (dateTimeStr.includes(':') && !dateTimeStr.includes('T')) {
-                    return dateTimeStr.split('.')[0]; // 밀리초 제거
-                }
-                
-                // 공백으로 분리된 날짜 시간 형태
-                if (dateTimeStr.includes(' ') && dateTimeStr.includes(':')) {
-                    const parts = dateTimeStr.split(' ');
-                    const timePart = parts[parts.length - 1];
-                    return timePart.split('.')[0];
+            // 1. ISO 형식에서 시간 부분 추출 (예: 2025-01-13T14:30:00)
+            if (typeof dateTimeStr === 'string' && dateTimeStr.includes('T')) {
+                const timePart = dateTimeStr.split('T')[1];
+                if (timePart) {
+                    // 시간대 정보나 밀리초 제거 (+09:00, Z, .000 등)
+                    return timePart.split('+')[0].split('Z')[0].split('.')[0];
                 }
             }
             
-            // Date 객체인 경우 - 로컬 시간대 기준
+            // 2. 이미 시간만 있는 경우 (HH:MM:SS 형태)
+            if (typeof dateTimeStr === 'string' && dateTimeStr.includes(':') && !dateTimeStr.includes('T')) {
+                return dateTimeStr.split('.')[0]; // 밀리초 제거
+            }
+            
+            // 3. 공백으로 분리된 날짜 시간 형태 (예: 2025-01-13 14:30:00)
+            if (typeof dateTimeStr === 'string' && dateTimeStr.includes(' ') && dateTimeStr.includes(':')) {
+                const parts = dateTimeStr.split(' ');
+                if (parts.length >= 2) {
+                    const timePart = parts[parts.length - 1]; // 마지막 부분이 시간
+                    return timePart.split('.')[0]; // 밀리초 제거
+                }
+            }
+            
+            // 4. Date 객체인 경우 - 로컬 시간으로 처리
             if (dateTimeStr instanceof Date) {
                 const hours = String(dateTimeStr.getHours()).padStart(2, '0');
                 const minutes = String(dateTimeStr.getMinutes()).padStart(2, '0');
@@ -218,32 +234,40 @@ const Utils = {
                 return `${hours}:${minutes}:${seconds}`;
             }
             
-            return dateTimeStr || '';
+            return String(dateTimeStr || '');
         } catch (error) {
-            console.error('시간 포맷 오류:', error);
-            return dateTimeStr || '';
+            console.error('시간 포맷 오류:', error, 'Input:', dateTimeStr);
+            return String(dateTimeStr || '');
         }
     },
     
-    // ⭐ 한국 시간으로 포맷 (YYYY-MM-DD HH:MM:SS)
+    // ⭐ 수정: 한국 시간으로 포맷 (YYYY-MM-DD HH:MM:SS) - 안전한 방식
     formatKoreanDateTime(dateTimeStr) {
         try {
             if (!dateTimeStr) return '';
             
+            // 이미 한국어 형식인 경우 그대로 반환
+            if (typeof dateTimeStr === 'string' && dateTimeStr.match(/\d{4}\.\s*\d{1,2}\.\s*\d{1,2}/)) {
+                return dateTimeStr;
+            }
+            
+            // ISO 형식이나 표준 형식을 한국어로 변환
             let date;
             if (typeof dateTimeStr === 'string') {
+                // 문자열에서 Date 객체 생성 시도
                 date = new Date(dateTimeStr);
             } else if (dateTimeStr instanceof Date) {
                 date = dateTimeStr;
             } else {
-                return dateTimeStr;
+                return String(dateTimeStr);
             }
             
             // 유효한 날짜인지 확인
             if (isNaN(date.getTime())) {
-                return dateTimeStr;
+                return String(dateTimeStr);
             }
             
+            // 한국 시간대로 포맷
             return date.toLocaleString('ko-KR', {
                 timeZone: 'Asia/Seoul',
                 year: 'numeric',
@@ -255,21 +279,52 @@ const Utils = {
                 hour12: false
             });
         } catch (error) {
-            console.error('한국시간 포맷 오류:', error);
-            return dateTimeStr || '';
+            console.error('한국시간 포맷 오류:', error, 'Input:', dateTimeStr);
+            return String(dateTimeStr || '');
         }
     },
     
-    // ⭐ 날짜 시간 문자열 파싱 및 유효성 검사
+    // ⭐ 새로운 함수: 날짜 문자열을 안전하게 파싱
     parseDateTime(dateTimeStr) {
         try {
             if (!dateTimeStr) return null;
             
-            const date = new Date(dateTimeStr);
-            return isNaN(date.getTime()) ? null : date;
+            // 문자열인 경우에만 Date 객체 생성
+            if (typeof dateTimeStr === 'string') {
+                const date = new Date(dateTimeStr);
+                return isNaN(date.getTime()) ? null : date;
+            }
+            
+            // 이미 Date 객체인 경우
+            if (dateTimeStr instanceof Date) {
+                return isNaN(dateTimeStr.getTime()) ? null : dateTimeStr;
+            }
+            
+            return null;
         } catch (error) {
             console.error('날짜시간 파싱 오류:', error);
             return null;
+        }
+    },
+    
+    // ⭐ 새로운 함수: 오늘 날짜 문자열 반환 (YYYY-MM-DD)
+    getTodayString() {
+        const today = new Date();
+        const year = today.getFullYear();
+        const month = String(today.getMonth() + 1).padStart(2, '0');
+        const day = String(today.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    },
+    
+    // ⭐ 새로운 함수: 시간 문자열 안전 비교용
+    createSortableTimeString(dateStr, timeStr) {
+        try {
+            const cleanDate = this.formatDateOnly(dateStr) || '';
+            const cleanTime = this.formatTimeOnly(timeStr) || '';
+            return `${cleanDate} ${cleanTime}`;
+        } catch (error) {
+            console.error('정렬용 시간 문자열 생성 오류:', error);
+            return `${dateStr} ${timeStr}`;
         }
     },
     
