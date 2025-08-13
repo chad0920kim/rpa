@@ -148,6 +148,120 @@ const Utils = {
         return new Date().toLocaleString('ko-KR');
     },
     
+    // ⭐ 날짜만 표시 (YYYY-MM-DD)
+    formatDateOnly(dateTimeStr) {
+        try {
+            if (!dateTimeStr) return '';
+            
+            // ISO 문자열에서 날짜 부분만 추출
+            if (typeof dateTimeStr === 'string') {
+                if (dateTimeStr.includes('T')) {
+                    return dateTimeStr.split('T')[0];
+                }
+                // 이미 날짜만 있는 경우
+                return dateTimeStr.split(' ')[0];
+            }
+            
+            // Date 객체인 경우
+            if (dateTimeStr instanceof Date) {
+                return dateTimeStr.toISOString().split('T')[0];
+            }
+            
+            return dateTimeStr;
+        } catch (error) {
+            console.error('날짜 포맷 오류:', error);
+            return dateTimeStr || '';
+        }
+    },
+    
+    // ⭐ 시간만 표시 (HH:MM:SS)
+    formatTimeOnly(dateTimeStr) {
+        try {
+            if (!dateTimeStr) return '';
+            
+            if (typeof dateTimeStr === 'string') {
+                // ISO 문자열에서 시간 부분 추출
+                if (dateTimeStr.includes('T')) {
+                    const timePart = dateTimeStr.split('T')[1];
+                    if (timePart) {
+                        // +09:00이나 Z 제거하고 시간만
+                        return timePart.split('+')[0].split('Z')[0].split('.')[0];
+                    }
+                }
+                
+                // 이미 시간만 있는 경우 (HH:MM:SS 형태)
+                if (dateTimeStr.includes(':') && !dateTimeStr.includes('T')) {
+                    return dateTimeStr.split('.')[0]; // 밀리초 제거
+                }
+                
+                // 공백으로 분리된 날짜 시간 형태
+                if (dateTimeStr.includes(' ') && dateTimeStr.includes(':')) {
+                    const parts = dateTimeStr.split(' ');
+                    const timePart = parts[parts.length - 1];
+                    return timePart.split('.')[0];
+                }
+            }
+            
+            // Date 객체인 경우
+            if (dateTimeStr instanceof Date) {
+                return dateTimeStr.toTimeString().split(' ')[0];
+            }
+            
+            return dateTimeStr || '';
+        } catch (error) {
+            console.error('시간 포맷 오류:', error);
+            return dateTimeStr || '';
+        }
+    },
+    
+    // ⭐ 한국 시간으로 포맷 (YYYY-MM-DD HH:MM:SS)
+    formatKoreanDateTime(dateTimeStr) {
+        try {
+            if (!dateTimeStr) return '';
+            
+            let date;
+            if (typeof dateTimeStr === 'string') {
+                date = new Date(dateTimeStr);
+            } else if (dateTimeStr instanceof Date) {
+                date = dateTimeStr;
+            } else {
+                return dateTimeStr;
+            }
+            
+            // 유효한 날짜인지 확인
+            if (isNaN(date.getTime())) {
+                return dateTimeStr;
+            }
+            
+            return date.toLocaleString('ko-KR', {
+                timeZone: 'Asia/Seoul',
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',
+                hour12: false
+            });
+        } catch (error) {
+            console.error('한국시간 포맷 오류:', error);
+            return dateTimeStr || '';
+        }
+    },
+    
+    // ⭐ 날짜 시간 문자열 파싱 및 유효성 검사
+    parseDateTime(dateTimeStr) {
+        try {
+            if (!dateTimeStr) return null;
+            
+            const date = new Date(dateTimeStr);
+            return isNaN(date.getTime()) ? null : date;
+        } catch (error) {
+            console.error('날짜시간 파싱 오류:', error);
+            return null;
+        }
+    },
+    
     // 이메일 유효성 검사
     isValidEmail(email) {
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
