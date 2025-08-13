@@ -1603,6 +1603,9 @@
             document.getElementById('processManager').value = call.processManager || (currentUser ? currentUser.name : '');
             document.getElementById('processNote').value = '';
 
+            // 현재 처리 중인 행에 하이라이트 표시
+            highlightTableRow(tableIndex, '#e0f2fe'); // 연한 파란색으로 처리 중 표시
+
             hideAlert('processModalError');
             document.getElementById('processModal').classList.add('show');
             
@@ -1620,6 +1623,11 @@
 
         // OB콜 처리 모달 닫기
         function closeProcessModal() {
+            // 하이라이트 제거
+            if (currentProcessingCall && currentProcessingCall.tableIndex !== undefined) {
+                removeTableRowHighlight(currentProcessingCall.tableIndex);
+            }
+            
             closeModal('processModal');
             currentProcessingCall = null;
             hideAlert('processModalError');
@@ -1827,10 +1835,7 @@
                             });
                             
                             // 행 하이라이트
-                            targetRow.style.backgroundColor = '#fef3c7';
-                            setTimeout(() => {
-                                targetRow.style.backgroundColor = '';
-                            }, 2000);
+                            highlightTableRow(nextIndex, '#fef3c7', 2000);
                         }
                     }, 500);
                 } else {
@@ -1916,17 +1921,50 @@
                         `;
                     }
                     
-                    // 행 하이라이트 효과 (일시적)
-                    row.style.backgroundColor = '#d1fae5';
-                    setTimeout(() => {
-                        row.style.backgroundColor = '';
-                    }, 2000);
+                    // 행 하이라이트 효과 (일시적) - 저장 완료 표시
+                    highlightTableRow(tableIndex, '#d1fae5', 2000);
                     
                     Utils.debugLog('테이블 행 즉시 업데이트 완료:', { tableIndex, processStatus, processManager });
                 }
                 
             } catch (error) {
                 Utils.debugLog('테이블 행 업데이트 오류:', error);
+            }
+        }
+
+        // 테이블 행 하이라이트 표시 함수
+        function highlightTableRow(tableIndex, color, duration = 0) {
+            try {
+                const tableBody = document.querySelector('#callsTable tbody');
+                const rows = tableBody.querySelectorAll('tr');
+                
+                if (rows[tableIndex]) {
+                    const row = rows[tableIndex];
+                    row.style.backgroundColor = color;
+                    
+                    // 지속 시간이 설정된 경우 자동으로 제거
+                    if (duration > 0) {
+                        setTimeout(() => {
+                            row.style.backgroundColor = '';
+                        }, duration);
+                    }
+                }
+            } catch (error) {
+                Utils.debugLog('행 하이라이트 오류:', error);
+            }
+        }
+
+        // 테이블 행 하이라이트 제거 함수
+        function removeTableRowHighlight(tableIndex) {
+            try {
+                const tableBody = document.querySelector('#callsTable tbody');
+                const rows = tableBody.querySelectorAll('tr');
+                
+                if (rows[tableIndex]) {
+                    rows[tableIndex].style.backgroundColor = '';
+                }
+            } catch (error) {
+                Utils.debugLog('행 하이라이트 제거 오류:', error);
             }
         }
 
@@ -2327,6 +2365,12 @@
             if (typeof modal === 'string') {
                 modal = document.getElementById(modal);
             }
+            
+            // 처리 모달인 경우 하이라이트 제거
+            if (modal.id === 'processModal' && currentProcessingCall && currentProcessingCall.tableIndex !== undefined) {
+                removeTableRowHighlight(currentProcessingCall.tableIndex);
+            }
+            
             modal.classList.remove('show');
         }
 
