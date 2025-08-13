@@ -4,325 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>투어비스 항공(국제선) Missing Call 처리 시스템</title>
+    <link rel="stylesheet" href="styles.css">
     <style>
-        /* 기본 리셋 및 레이아웃 */
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            height: 100vh;
-            overflow: hidden;
-        }
-
-        /* 고정 헤더 */
-        .fixed-header {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            z-index: 1000;
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
-            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
-        }
-
-        .header {
-            padding: 8px 20px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            min-height: 50px;
-        }
-
-        .header h1 {
-            color: #333;
-            font-size: 1.1rem;
-            font-weight: 500;
-        }
-
-        .user-info {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            font-size: 0.85rem;
-        }
-
-        .user-name {
-            color: #333;
-            font-weight: 500;
-        }
-
-        .user-role {
-            color: #666;
-            font-size: 0.8rem;
-            padding: 2px 6px;
-            background: rgba(102, 126, 234, 0.1);
-            border-radius: 10px;
-        }
-
-        /* 네비게이션 메뉴 */
-        .nav-menu {
-            background: rgba(255, 255, 255, 0.9);
-            padding: 8px 20px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
-        }
-
-        .nav-buttons {
-            display: flex;
-            gap: 8px;
-        }
-
-        .nav-btn {
-            padding: 6px 12px;
-            border: none;
-            border-radius: 6px;
-            font-size: 0.8rem;
-            font-weight: 500;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            background: rgba(102, 126, 234, 0.1);
-            color: #667eea;
-        }
-
-        .nav-btn:hover, .nav-btn.active {
-            background: #667eea;
-            color: white;
-        }
-
-        /* 메인 컨텐츠 영역 */
-        .main-container {
-            height: 100vh;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .content-wrapper {
-            margin-top: 108px; /* 헤더 + 네비 높이 */
-            height: calc(100vh - 108px);
-            overflow: hidden;
-        }
-
-        .section {
-            height: 100%;
-            background: rgba(255, 255, 255, 0.95);
-            display: flex;
-            flex-direction: column;
-        }
-
-        .section.active {
-            display: flex;
-        }
-
-        /* 섹션 헤더 축소 */
-        .section-header {
-            padding: 12px 20px;
-            border-bottom: 1px solid #e5e7eb;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            background: #f8f9fa;
-            flex-shrink: 0;
-        }
-
-        .section-header h2 {
-            color: #333;
-            font-size: 1.1rem;
-            font-weight: 500;
-        }
-
-        /* 검색 섹션 최소화 */
-        .search-section {
-            background: #f8f9ff;
-            padding: 12px 20px;
-            border-bottom: 1px solid #e0e7ff;
-            flex-shrink: 0;
-        }
-
-        .search-form {
-            display: flex;
-            gap: 12px;
-            align-items: end;
-        }
-
-        .form-group {
-            margin-bottom: 0;
-        }
-
-        .form-group label {
-            display: block;
-            margin-bottom: 4px;
-            color: #333;
-            font-weight: 500;
-            font-size: 0.8rem;
-        }
-
-        .form-group input, .form-group select {
-            padding: 6px 10px;
-            border: 1px solid #d1d5db;
-            border-radius: 6px;
-            font-size: 0.85rem;
-            background: white;
-            min-width: 120px;
-        }
-
-        .form-group input:focus, .form-group select:focus {
-            outline: none;
-            border-color: #667eea;
-            box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.1);
-        }
-
-        /* 결과 영역 - 스크롤 가능 */
-        .results-container {
-            flex: 1;
-            overflow: hidden;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .results-header {
-            padding: 10px 20px;
-            background: white;
-            border-bottom: 1px solid #e5e7eb;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-shrink: 0;
-        }
-
-        .results-header h3 {
-            color: #333;
-            margin: 0;
-            font-size: 0.95rem;
-        }
-
-        .results-content {
-            flex: 1;
-            overflow-y: auto;
-            background: white;
-        }
-
-        /* 테이블 최적화 */
-        .table-container {
-            overflow-x: auto;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 0.8rem;
-        }
-
-        th, td {
-            padding: 6px 8px;
-            text-align: left;
-            border-bottom: 1px solid #f1f3f4;
-            white-space: nowrap;
-        }
-
-        th {
-            background: #f8f9fa;
-            font-weight: 600;
-            color: #333;
-            font-size: 0.75rem;
-            text-transform: uppercase;
-            letter-spacing: 0.3px;
-            position: sticky;
-            top: 0;
-            z-index: 10;
-        }
-
-        td {
-            color: #555;
-        }
-
-        /* 버튼 최소화 */
-        .btn {
-            padding: 6px 12px;
-            border: none;
-            border-radius: 6px;
-            font-size: 0.75rem;
-            font-weight: 500;
-            cursor: pointer;
-            transition: all 0.2s ease;
-        }
-
-        .btn-primary {
-            background: #667eea;
-            color: white;
-        }
-
-        .btn-primary:hover {
-            background: #5a67d8;
-        }
-
-        .btn-secondary {
-            background: #6c757d;
-            color: white;
-        }
-
-        .btn-secondary:hover {
-            background: #5a6268;
-        }
-
-        .btn-small {
-            padding: 4px 8px;
-            font-size: 0.7rem;
-        }
-
-        /* 상태 배지 최소화 */
-        .status-badge {
-            padding: 2px 8px;
-            border-radius: 12px;
-            font-size: 0.7rem;
-            font-weight: 600;
-            text-align: center;
-            display: inline-block;
-            min-width: 50px;
-        }
-
-        .status-processed { 
-            background: #d1fae5; 
-            color: #065f46; 
-        }
-
-        .status-pending { 
-            background: #fee2e2; 
-            color: #991b1b; 
-        }
-
-        .call-count {
-            background: #fef3c7;
-            color: #92400e;
-            padding: 2px 8px;
-            border-radius: 12px;
-            font-size: 0.7rem;
-            font-weight: 600;
-        }
-
-        .phone-number {
-            font-family: 'Courier New', monospace;
-            font-weight: 600;
-            color: #1f2937;
-            font-size: 0.8rem;
-        }
-
-        .time-display {
-            font-family: 'Courier New', monospace;
-            color: #4b5563;
-            font-size: 0.75rem;
-        }
-
-        /* 정렬 가능한 헤더 */
+        /* 정렬 가능한 헤더 스타일 */
         .sortable-header {
             cursor: pointer;
             user-select: none;
             position: relative;
-            padding-right: 16px !important;
+            padding-right: 20px !important;
         }
         
         .sortable-header:hover {
@@ -331,10 +20,10 @@
         
         .sort-arrow {
             position: absolute;
-            right: 4px;
+            right: 5px;
             top: 50%;
             transform: translateY(-50%);
-            font-size: 10px;
+            font-size: 12px;
             color: #666;
             opacity: 0.7;
         }
@@ -356,129 +45,6 @@
         .sort-arrow.none::after {
             content: "↕️";
         }
-
-        /* 로딩 메시지 최소화 */
-        .loading {
-            text-align: center;
-            padding: 20px;
-            color: #666;
-            font-size: 0.85rem;
-        }
-
-        .spinner {
-            display: inline-block;
-            width: 16px;
-            height: 16px;
-            border: 2px solid #f3f4f6;
-            border-top: 2px solid #667eea;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-            margin-left: 8px;
-        }
-
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-
-        /* 빈 데이터 메시지 */
-        .no-data-message {
-            text-align: center;
-            padding: 30px;
-            color: #666;
-        }
-
-        .no-data-message h3 {
-            font-size: 1rem;
-            margin-bottom: 8px;
-        }
-
-        .no-data-message p {
-            font-size: 0.85rem;
-        }
-
-        /* 유틸리티 클래스 */
-        .hidden { 
-            display: none !important; 
-        }
-
-        .text-center { 
-            text-align: center; 
-        }
-
-        /* 연결 상태 표시 최소화 */
-        .connection-status {
-            position: fixed;
-            top: 60px;
-            right: 10px;
-            padding: 4px 8px;
-            border-radius: 12px;
-            font-size: 0.7rem;
-            font-weight: 600;
-            z-index: 999;
-            opacity: 0;
-            transition: opacity 0.3s ease;
-        }
-
-        .connection-status.show {
-            opacity: 1;
-        }
-
-        .connection-status.connected {
-            background: #d1fae5;
-            color: #065f46;
-        }
-
-        .connection-status.disconnected {
-            background: #fee2e2;
-            color: #991b1b;
-        }
-
-        .connection-status.testing {
-            background: #fef3c7;
-            color: #92400e;
-        }
-
-        /* 반응형 디자인 */
-        @media (max-width: 768px) {
-            .header {
-                padding: 6px 15px;
-                flex-direction: column;
-                gap: 6px;
-            }
-
-            .header h1 {
-                font-size: 0.95rem;
-            }
-
-            .nav-menu {
-                padding: 6px 15px;
-            }
-
-            .search-form {
-                flex-wrap: wrap;
-                gap: 8px;
-            }
-
-            .form-group input, .form-group select {
-                min-width: 100px;
-            }
-
-            .content-wrapper {
-                margin-top: 130px;
-                height: calc(100vh - 130px);
-            }
-
-            th, td {
-                padding: 4px 6px;
-                font-size: 0.7rem;
-            }
-
-            .btn {
-                padding: 4px 8px;
-                font-size: 0.7rem;
-            }
-        }
     </style>
 </head>
 <body>
@@ -487,30 +53,84 @@
         <span id="connectionText">연결 확인 중...</span>
     </div>
 
-    <!-- 메인 컨테이너 -->
-    <div id="mainContainer" class="main-container">
-        <!-- 고정 헤더 -->
-        <div class="fixed-header">
-            <div class="header">
-                <h1>투어비스 Missing Call 관리 시스템</h1>
-                <div class="user-info">
-                    <span class="user-name" id="currentUserName">김영훈</span>
-                    <span class="user-role" id="currentUserRole">관리자</span>
-                    <button class="btn btn-secondary btn-small" onclick="logout()" title="시스템에서 로그아웃">🚪 로그아웃</button>
-                </div>
+    <!-- 로딩 화면 -->
+    <div id="initialLoading" class="login-container">
+        <div class="login-box text-center">
+            <h2>🚀 시스템 초기화 중...</h2>
+            <div class="loading">
+                설정을 확인하고 있습니다<span class="spinner"></span>
             </div>
+            <div id="initStatus" class="text-small mt-20">
+                <!-- 초기화 상태 메시지 -->
+            </div>
+        </div>
+    </div>
 
-            <div class="nav-menu">
-                <div class="nav-buttons">
-                    <button class="nav-btn active" onclick="showSection('dashboard')">📊 대시보드</button>
-                    <button class="nav-btn" onclick="showSection('users')" id="usersMenuBtn">👥 사용자 관리</button>
-                    <button class="nav-btn" onclick="showSection('requests')" id="requestsMenuBtn">📋 계정 신청 관리</button>
+    <!-- 로그인 화면 -->
+    <div id="loginContainer" class="login-container hidden">
+        <div class="login-box">
+            <div class="login-header">
+                <h1>투어비스</h1>
+                <p>항공(국제선) Missing Call 처리 시스템</p>
+            </div>
+            
+            <form id="loginForm">
+                <div class="form-group">
+                    <label for="loginUsername">사용자 ID</label>
+                    <input type="text" id="loginUsername" required autocomplete="username" placeholder="사용자 ID를 입력하세요">
                 </div>
+                
+                <div class="form-group">
+                    <label for="loginPassword">비밀번호</label>
+                    <div class="password-container">
+                        <input type="password" id="loginPassword" required autocomplete="current-password" placeholder="비밀번호를 입력하세요">
+                        <button type="button" class="password-toggle" onclick="togglePassword('loginPassword')">👁️</button>
+                    </div>
+                </div>
+                
+                <div class="checkbox-group">
+                    <input type="checkbox" id="rememberMe">
+                    <label for="rememberMe">로그인 상태 유지 (7일)</label>
+                </div>
+                
+                <button type="submit" class="btn btn-primary">
+                    <span id="loginBtnText">로그인</span>
+                </button>
+                
+                <button type="button" class="btn btn-secondary mt-10" onclick="openAccountRequestModal()" style="width: 100%;">
+                    📧 계정 신청
+                </button>
+            </form>
+            
+            <div id="loginError" class="alert alert-error hidden"></div>
+            
+            <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #eee; font-size: 0.85rem; color: #666; text-align: center;">
+                © 2025 TideSquare. All rights reserved.<br>
+                <span class="text-small">계정 문의: 김영훈 담당자</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- 메인 대시보드 -->
+    <div id="mainContainer" class="main-container">
+        <div class="header">
+            <h1>투어비스 Missing Call 관리 시스템</h1>
+            <div class="user-info">
+                <span class="user-name" id="currentUserName">사용자</span>
+                <span class="user-role" id="currentUserRole">권한</span>
+                <button class="btn btn-secondary btn-small" onclick="logout()" title="시스템에서 로그아웃">🚪 로그아웃</button>
             </div>
         </div>
 
-        <!-- 컨텐츠 영역 -->
-        <div class="content-wrapper">
+        <div class="nav-menu">
+            <div class="nav-buttons">
+                <button class="nav-btn active" onclick="showSection('dashboard')">📊 대시보드</button>
+                <button class="nav-btn hidden" onclick="showSection('users')" id="usersMenuBtn">👥 사용자 관리</button>
+                <button class="nav-btn hidden" onclick="showSection('requests')" id="requestsMenuBtn">📋 계정 신청 관리</button>
+            </div>
+        </div>
+
+        <div class="content">
             <!-- 대시보드 섹션 -->
             <div id="dashboardSection" class="section active">
                 <div class="section-header">
@@ -524,7 +144,7 @@
                     <div class="search-form">
                         <div class="form-group">
                             <label for="searchDate">조회 일자</label>
-                            <input type="date" id="searchDate" value="2025-08-11">
+                            <input type="date" id="searchDate">
                         </div>
                         <div class="form-group">
                             <label for="processFilter">처리 상태</label>
@@ -546,342 +166,784 @@
                     데이터를 조회하고 있습니다<span class="spinner"></span>
                 </div>
 
-                <div id="callsResults" class="results-container">
-                    <div class="results-header">
-                        <h3 id="resultsCount">📊 조회 결과: 15건</h3>
+                <div id="callsResults" class="hidden">
+                    <div style="margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                        <h3 id="resultsCount" style="color: #333; margin: 0;">조회 결과</h3>
                         <div>
                             <button class="btn btn-secondary btn-small" onclick="searchCalls()" title="서버에서 최신 데이터를 가져옵니다">
                                 🔄 새로고침
                             </button>
-                            <button class="btn btn-primary btn-small" onclick="exportToCSV()" style="margin-left: 8px;">📥 CSV 내보내기</button>
+                            <button class="btn btn-primary btn-small" onclick="exportToCSV()" style="margin-left: 10px;">📥 CSV 내보내기</button>
                         </div>
                     </div>
                     
-                    <div class="results-content">
-                        <div class="table-container">
-                            <table id="callsTable">
-                                <thead>
-                                    <tr>
-                                        <th>발생일</th>
-                                        <th class="sortable-header" onclick="sortTable('startTime')" title="클릭하여 정렬">
-                                            인입시간
-                                            <span id="sortArrow-startTime" class="sort-arrow desc active"></span>
-                                        </th>
-                                        <th>대기시간(분)</th>
-                                        <th>전화번호</th>
-                                        <th>인입큐</th>
-                                        <th class="sortable-header" onclick="sortTable('callCount')" title="클릭하여 정렬">
-                                            중복횟수
-                                            <span id="sortArrow-callCount" class="sort-arrow none"></span>
-                                        </th>
-                                        <th>처리상태</th>
-                                        <th>처리담당자</th>
-                                        <th>액션</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <!-- 샘플 데이터 -->
-                                    <tr>
-                                        <td>2025-08-11</td>
-                                        <td class="time-display">14:32:15</td>
-                                        <td class="time-display">3분</td>
-                                        <td class="phone-number">02-1234-5678</td>
-                                        <td>국제선예약</td>
-                                        <td><span class="call-count">2번</span></td>
-                                        <td>
-                                            <span class="status-badge status-pending">
-                                                ⏳ 미처리
-                                            </span>
-                                        </td>
-                                        <td>-</td>
-                                        <td>
-                                            <button class="btn btn-primary btn-small" onclick="openProcessModal(0)">
-                                                📞 처리
-                                            </button>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td>2025-08-11</td>
-                                        <td class="time-display">13:45:22</td>
-                                        <td class="time-display">5분</td>
-                                        <td class="phone-number">010-9876-5432</td>
-                                        <td>국제선예약</td>
-                                        <td><span class="call-count">1번</span></td>
-                                        <td>
-                                            <span class="status-badge status-processed">
-                                                ✅ 처리완료
-                                            </span>
-                                        </td>
-                                        <td>김영훈</td>
-                                        <td>
-                                            <button class="btn btn-primary btn-small" onclick="openProcessModal(1)">
-                                                ✏️ 수정
-                                            </button>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td>2025-08-11</td>
-                                        <td class="time-display">12:18:47</td>
-                                        <td class="time-display">2분</td>
-                                        <td class="phone-number">02-8765-4321</td>
-                                        <td>국제선예약</td>
-                                        <td><span class="call-count">3번</span></td>
-                                        <td>
-                                            <span class="status-badge status-pending">
-                                                ⏳ 미처리
-                                            </span>
-                                        </td>
-                                        <td>-</td>
-                                        <td>
-                                            <button class="btn btn-primary btn-small" onclick="openProcessModal(2)">
-                                                📞 처리
-                                            </button>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td>2025-08-11</td>
-                                        <td class="time-display">11:55:33</td>
-                                        <td class="time-display">4분</td>
-                                        <td class="phone-number">010-1111-2222</td>
-                                        <td>국제선예약</td>
-                                        <td><span class="call-count">1번</span></td>
-                                        <td>
-                                            <span class="status-badge status-processed">
-                                                ✅ 처리완료
-                                            </span>
-                                        </td>
-                                        <td>이수진</td>
-                                        <td>
-                                            <button class="btn btn-primary btn-small" onclick="openProcessModal(3)">
-                                                ✏️ 수정
-                                            </button>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td>2025-08-11</td>
-                                        <td class="time-display">11:22:10</td>
-                                        <td class="time-display">6분</td>
-                                        <td class="phone-number">02-3333-4444</td>
-                                        <td>국제선예약</td>
-                                        <td><span class="call-count">2번</span></td>
-                                        <td>
-                                            <span class="status-badge status-pending">
-                                                ⏳ 미처리
-                                            </span>
-                                        </td>
-                                        <td>-</td>
-                                        <td>
-                                            <button class="btn btn-primary btn-small" onclick="openProcessModal(4)">
-                                                📞 처리
-                                            </button>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td>2025-08-11</td>
-                                        <td class="time-display">10:47:55</td>
-                                        <td class="time-display">1분</td>
-                                        <td class="phone-number">010-5555-6666</td>
-                                        <td>국제선예약</td>
-                                        <td><span class="call-count">1번</span></td>
-                                        <td>
-                                            <span class="status-badge status-processed">
-                                                ✅ 처리완료
-                                            </span>
-                                        </td>
-                                        <td>박민수</td>
-                                        <td>
-                                            <button class="btn btn-primary btn-small" onclick="openProcessModal(5)">
-                                                ✏️ 수정
-                                            </button>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td>2025-08-11</td>
-                                        <td class="time-display">10:15:42</td>
-                                        <td class="time-display">7분</td>
-                                        <td class="phone-number">02-7777-8888</td>
-                                        <td>국제선예약</td>
-                                        <td><span class="call-count">4번</span></td>
-                                        <td>
-                                            <span class="status-badge status-pending">
-                                                ⏳ 미처리
-                                            </span>
-                                        </td>
-                                        <td>-</td>
-                                        <td>
-                                            <button class="btn btn-primary btn-small" onclick="openProcessModal(6)">
-                                                📞 처리
-                                            </button>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td>2025-08-11</td>
-                                        <td class="time-display">09:58:18</td>
-                                        <td class="time-display">3분</td>
-                                        <td class="phone-number">010-9999-0000</td>
-                                        <td>국제선예약</td>
-                                        <td><span class="call-count">1번</span></td>
-                                        <td>
-                                            <span class="status-badge status-processed">
-                                                ✅ 처리완료
-                                            </span>
-                                        </td>
-                                        <td>정현우</td>
-                                        <td>
-                                            <button class="btn btn-primary btn-small" onclick="openProcessModal(7)">
-                                                ✏️ 수정
-                                            </button>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td>2025-08-11</td>
-                                        <td class="time-display">09:32:06</td>
-                                        <td class="time-display">2분</td>
-                                        <td class="phone-number">02-1212-3434</td>
-                                        <td>국제선예약</td>
-                                        <td><span class="call-count">2번</span></td>
-                                        <td>
-                                            <span class="status-badge status-pending">
-                                                ⏳ 미처리
-                                            </span>
-                                        </td>
-                                        <td>-</td>
-                                        <td>
-                                            <button class="btn btn-primary btn-small" onclick="openProcessModal(8)">
-                                                📞 처리
-                                            </button>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td>2025-08-11</td>
-                                        <td class="time-display">09:15:29</td>
-                                        <td class="time-display">5분</td>
-                                        <td class="phone-number">010-5678-9012</td>
-                                        <td>국제선예약</td>
-                                        <td><span class="call-count">1번</span></td>
-                                        <td>
-                                            <span class="status-badge status-processed">
-                                                ✅ 처리완료
-                                            </span>
-                                        </td>
-                                        <td>최지원</td>
-                                        <td>
-                                            <button class="btn btn-primary btn-small" onclick="openProcessModal(9)">
-                                                ✏️ 수정
-                                            </button>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td>2025-08-11</td>
-                                        <td class="time-display">08:47:12</td>
-                                        <td class="time-display">4분</td>
-                                        <td class="phone-number">02-3456-7890</td>
-                                        <td>국제선예약</td>
-                                        <td><span class="call-count">3번</span></td>
-                                        <td>
-                                            <span class="status-badge status-pending">
-                                                ⏳ 미처리
-                                            </span>
-                                        </td>
-                                        <td>-</td>
-                                        <td>
-                                            <button class="btn btn-primary btn-small" onclick="openProcessModal(10)">
-                                                📞 처리
-                                            </button>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td>2025-08-11</td>
-                                        <td class="time-display">08:23:45</td>
-                                        <td class="time-display">1분</td>
-                                        <td class="phone-number">010-2468-1357</td>
-                                        <td>국제선예약</td>
-                                        <td><span class="call-count">1번</span></td>
-                                        <td>
-                                            <span class="status-badge status-processed">
-                                                ✅ 처리완료
-                                            </span>
-                                        </td>
-                                        <td>한소영</td>
-                                        <td>
-                                            <button class="btn btn-primary btn-small" onclick="openProcessModal(11)">
-                                                ✏️ 수정
-                                            </button>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td>2025-08-11</td>
-                                        <td class="time-display">08:05:33</td>
-                                        <td class="time-display">6분</td>
-                                        <td class="phone-number">02-9876-5432</td>
-                                        <td>국제선예약</td>
-                                        <td><span class="call-count">2번</span></td>
-                                        <td>
-                                            <span class="status-badge status-pending">
-                                                ⏳ 미처리
-                                            </span>
-                                        </td>
-                                        <td>-</td>
-                                        <td>
-                                            <button class="btn btn-primary btn-small" onclick="openProcessModal(12)">
-                                                📞 처리
-                                            </button>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td>2025-08-11</td>
-                                        <td class="time-display">07:41:58</td>
-                                        <td class="time-display">3분</td>
-                                        <td class="phone-number">010-1357-2468</td>
-                                        <td>국제선예약</td>
-                                        <td><span class="call-count">1번</span></td>
-                                        <td>
-                                            <span class="status-badge status-processed">
-                                                ✅ 처리완료
-                                            </span>
-                                        </td>
-                                        <td>김태현</td>
-                                        <td>
-                                            <button class="btn btn-primary btn-small" onclick="openProcessModal(13)">
-                                                ✏️ 수정
-                                            </button>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td>2025-08-11</td>
-                                        <td class="time-display">07:19:24</td>
-                                        <td class="time-display">8분</td>
-                                        <td class="phone-number">02-6543-2109</td>
-                                        <td>국제선예약</td>
-                                        <td><span class="call-count">5번</span></td>
-                                        <td>
-                                            <span class="status-badge status-pending">
-                                                ⏳ 미처리
-                                            </span>
-                                        </td>
-                                        <td>-</td>
-                                        <td>
-                                            <button class="btn btn-primary btn-small" onclick="openProcessModal(14)">
-                                                📞 처리
-                                            </button>
-                                        </td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
+                    <div class="table-container">
+                        <table id="callsTable">
+                            <thead>
+                                <tr>
+                                    <th>발생일</th>
+                                    <th class="sortable-header" onclick="sortTable('startTime')" title="클릭하여 정렬">
+                                        인입시간
+                                        <span id="sortArrow-startTime" class="sort-arrow desc active"></span>
+                                    </th>
+                                    <th>대기시간(분)</th>
+                                    <th>전화번호</th>
+                                    <th>인입큐</th>
+                                    <th class="sortable-header" onclick="sortTable('callCount')" title="클릭하여 정렬">
+                                        중복횟수
+                                        <span id="sortArrow-callCount" class="sort-arrow none"></span>
+                                    </th>
+                                    <th>처리상태</th>
+                                    <th>처리담당자</th>
+                                    <th>액션</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
                     </div>
                 </div>
 
-                <div id="noDataMessage" class="no-data-message text-center hidden">
+                <div id="noDataMessage" class="text-center hidden" style="padding: 40px; color: #666;">
                     <h3 id="noDataTitle">📭 조회된 데이터가 없습니다</h3>
                     <p id="noDataSubtitle">다른 날짜를 선택하거나 필터 조건을 변경해보세요.</p>
+                </div>
+            </div>
+
+            <!-- 사용자 관리 섹션 -->
+            <div id="usersSection" class="section">
+                <div class="section-header">
+                    <h2>사용자 관리</h2>
+                    <button class="btn btn-primary" onclick="openUserModal()">➕ 새 사용자 추가</button>
+                </div>
+
+                <div id="usersLoading" class="loading hidden">
+                    사용자 목록을 불러오고 있습니다<span class="spinner"></span>
+                </div>
+
+                <div id="usersResults" class="table-container">
+                    <table id="usersTable">
+                        <thead>
+                            <tr>
+                                <th>사용자 ID</th>
+                                <th>실명</th>
+                                <th>이메일</th>
+                                <th>권한</th>
+                                <th>상태</th>
+                                <th>등록일</th>
+                                <th>마지막 로그인</th>
+                                <th>액션</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- 계정 신청 관리 섹션 -->
+            <div id="requestsSection" class="section">
+                <div class="section-header">
+                    <h2>계정 신청 관리</h2>
+                    <button class="btn btn-secondary" onclick="loadRequestsSection()">🔄 새로고침</button>
+                </div>
+
+                <div id="requestsLoading" class="loading hidden">
+                    계정 신청 목록을 불러오고 있습니다<span class="spinner"></span>
+                </div>
+
+                <div id="requestsResults" class="table-container">
+                    <table id="requestsTable">
+                        <thead>
+                            <tr>
+                                <th>신청일</th>
+                                <th>신청자</th>
+                                <th>이메일</th>
+                                <th>연락처</th>
+                                <th>부서/팀</th>
+                                <th>요청 권한</th>
+                                <th>희망 ID</th>
+                                <th>상태</th>
+                                <th>액션</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+
+                <div id="noRequestsMessage" class="text-center hidden" style="padding: 40px; color: #666;">
+                    <h3>📭 대기 중인 계정 신청이 없습니다</h3>
+                    <p>새로운 신청이 접수되면 여기에 표시됩니다.</p>
                 </div>
             </div>
         </div>
     </div>
 
+    <!-- 사용자 등록/수정 모달 -->
+    <div id="userModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="userModalTitle">사용자 추가</h3>
+            </div>
+            
+            <form id="userForm">
+                <input type="hidden" id="userId">
+                
+                <div class="form-group">
+                    <label for="userUsername">사용자 ID *</label>
+                    <input type="text" id="userUsername" required placeholder="영문/숫자로 입력하세요" autocomplete="username">
+                </div>
+                
+                <div class="form-group">
+                    <label for="userPassword">비밀번호 *</label>
+                    <div class="password-container">
+                        <input type="password" id="userPassword" placeholder="6자 이상 입력하세요" autocomplete="new-password">
+                        <button type="button" class="password-toggle" onclick="togglePassword('userPassword')">👁️</button>
+                    </div>
+                    <small class="text-small">수정시 비밀번호를 변경하지 않으려면 비워두세요</small>
+                </div>
+                
+                <div class="form-group">
+                    <label for="userName">실명 *</label>
+                    <input type="text" id="userName" required placeholder="실명을 입력하세요" autocomplete="name">
+                </div>
+                
+                <div class="form-group">
+                    <label for="userEmail">이메일 *</label>
+                    <input type="email" id="userEmail" required placeholder="email@example.com" autocomplete="email">
+                </div>
+                
+                <div class="form-group">
+                    <label for="userRole">권한 *</label>
+                    <select id="userRole" required>
+                        <option value="">권한을 선택하세요</option>
+                        <option value="user">일반 사용자</option>
+                        <option value="manager">관리자</option>
+                        <option value="admin">시스템 관리자</option>
+                    </select>
+                </div>
+            </form>
+
+            <div id="userModalError" class="alert alert-error hidden"></div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="closeUserModal()">취소</button>
+                <button type="button" class="btn btn-success" onclick="saveUser()">
+                    <span id="userSaveBtnText">💾 저장</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 계정 신청 승인 모달 -->
+    <div id="approvalModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>✅ 계정 신청 승인</h3>
+                <p style="color: #666; margin: 5px 0 0 0;">
+                    신청자: <span id="approvalRequestName" class="font-bold"></span><br>
+                    <span id="approvalRequestInfo" style="font-size: 0.9rem;"></span>
+                </p>
+            </div>
+            
+            <form id="approvalForm">
+                <input type="hidden" id="approvalRequestId">
+                
+                <div class="form-group">
+                    <label for="approvalUsername">사용자 ID *</label>
+                    <input type="text" id="approvalUsername" required placeholder="영문/숫자로 입력하세요">
+                    <small class="text-small">신청자가 요청한 ID를 수정할 수 있습니다.</small>
+                </div>
+                
+                <div class="form-group">
+                    <label for="approvalPassword">임시 비밀번호 *</label>
+                    <div class="password-container">
+                        <input type="password" id="approvalPassword" required placeholder="6자 이상 입력하세요">
+                        <button type="button" class="password-toggle" onclick="togglePassword('approvalPassword')">👁️</button>
+                    </div>
+                    <small class="text-small">사용자가 첫 로그인 후 변경하도록 안내하세요.</small>
+                </div>
+                
+                <div class="form-group">
+                    <label for="approvalNote">승인 메모 (선택)</label>
+                    <textarea id="approvalNote" rows="2" placeholder="승인 시 특이사항이나 전달 메시지"></textarea>
+                </div>
+            </form>
+
+            <div id="approvalModalError" class="alert alert-error hidden"></div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="closeApprovalModal()">취소</button>
+                <button type="button" class="btn btn-success" onclick="approveAccountRequest()">
+                    <span id="approvalSaveBtnText">✅ 승인 및 계정 생성</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- OB콜 처리 모달 -->
+    <div id="processModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>📞 OB콜 처리</h3>
+                <p style="color: #666; margin: 5px 0 0 0;">
+                    전화번호: <span id="modalPhoneNumber" class="phone-number"></span><br>
+                    <span id="modalCallInfo" style="font-size: 0.9rem;"></span>
+                </p>
+            </div>
+            
+            <form id="processForm">
+                <div class="form-group">
+                    <label for="processStatus">처리 여부 *</label>
+                    <select id="processStatus" required>
+                        <option value="">선택해주세요</option>
+                        <option value="완료">✅ 완료</option>
+                        <option value="미완료">❌ 미완료</option>
+                        <option value="보류">⏸️ 보류</option>
+                        <option value="재시도">🔄 재시도 필요</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="processManager">처리담당자 *</label>
+                    <input type="text" id="processManager" required placeholder="담당자명을 입력하세요" autocomplete="name">
+                </div>
+
+                <div class="form-group">
+                    <label for="processNote">처리 메모 (선택)</label>
+                    <textarea id="processNote" rows="3" placeholder="처리 내용이나 특이사항을 입력하세요"></textarea>
+                </div>
+            </form>
+
+            <div id="processModalError" class="alert alert-error hidden"></div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="closeProcessModal()">취소</button>
+                <button type="button" class="btn btn-success" onclick="saveProcess()">
+                    <span id="processSaveBtnText">💾 처리 완료</span>
+                </button>
+                <button type="button" class="btn btn-primary" onclick="saveAndNext()" style="margin-left: 10px;" title="처리 후 다음 미처리 건으로 이동">
+                    ⏩ 처리 후 다음
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 계정 신청 모달 -->
+    <div id="accountRequestModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>📧 계정 신청</h3>
+                <p style="color: #666; margin: 5px 0 0 0; font-size: 0.9rem;">
+                    신청서를 작성해주시면 관리자가 검토 후 계정을 생성해 드립니다.
+                </p>
+            </div>
+            
+            <form id="accountRequestForm">
+                <div class="form-group">
+                    <label for="requestName">성명 *</label>
+                    <input type="text" id="requestName" required placeholder="실명을 입력하세요" autocomplete="name">
+                </div>
+                
+                <div class="form-group">
+                    <label for="requestEmail">이메일 *</label>
+                    <input type="email" id="requestEmail" required placeholder="email@company.com" autocomplete="email">
+                </div>
+                
+                <div class="form-group">
+                    <label for="requestPhone">연락처 *</label>
+                    <input type="tel" id="requestPhone" required placeholder="010-0000-0000" autocomplete="tel">
+                </div>
+                
+                <div class="form-group">
+                    <label for="requestDepartment">부서/팀 *</label>
+                    <input type="text" id="requestDepartment" required placeholder="소속 부서나 팀을 입력하세요">
+                </div>
+                
+                <div class="form-group">
+                    <label for="requestPosition">직급/직책</label>
+                    <input type="text" id="requestPosition" placeholder="직급이나 직책을 입력하세요">
+                </div>
+                
+                <div class="form-group">
+                    <label for="requestRole">요청 권한 *</label>
+                    <select id="requestRole" required>
+                        <option value="">권한을 선택하세요</option>
+                        <option value="user">일반 사용자 (조회 및 처리만 가능)</option>
+                        <option value="manager">관리자 (사용자 관리 포함)</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="requestReason">신청 사유 *</label>
+                    <textarea id="requestReason" rows="3" required placeholder="계정이 필요한 업무상 사유를 간단히 설명해주세요"></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label for="requestUserId">희망 사용자 ID</label>
+                    <input type="text" id="requestUserId" placeholder="영문/숫자 조합 (비워두면 자동 생성)">
+                    <small class="text-small">비워두시면 관리자가 적절한 ID로 생성해 드립니다.</small>
+                </div>
+            </form>
+
+            <div id="accountRequestError" class="alert alert-error hidden"></div>
+            <div id="accountRequestSuccess" class="alert alert-success hidden"></div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="closeAccountRequestModal()">취소</button>
+                <button type="button" class="btn btn-primary" onclick="submitAccountRequest()">
+                    <span id="accountRequestBtnText">📧 신청서 제출</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- config.js 파일 로드 -->
+    <script src="config.js"></script>
+    
     <script>
-        // 기본 함수들
+        // 전역 변수
+        let currentUser = null;
+        let currentCallsData = [];
+        let currentUsersData = [];
+        let currentRequestsData = [];
+        let currentProcessingCall = null;
+        let connectionCheckInterval = null;
+
+        // 정렬 상태 관리
+        let currentSort = {
+            column: 'startTime',    // 기본 정렬 칼럼: 인입시간
+            direction: 'desc'       // 기본 정렬 방향: 내림차순 (늦은 시간부터)
+        };
+
+        // 페이지 로드시 초기화
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeApp();
+        });
+
+        // ⭐ 수정된 앱 초기화 (날짜 처리 개선)
+        async function initializeApp() {
+            Utils.debugLog('앱 초기화 시작');
+            
+            try {
+                // 초기화 상태 표시
+                updateInitStatus('설정 파일 검증 중...');
+                
+                // 설정 검증
+                if (!validateConfig()) {
+                    showError('설정 파일에 오류가 있습니다. config.js를 확인해주세요.');
+                    return;
+                }
+
+                updateInitStatus('연결 테스트 중...');
+                
+                // Apps Script 연결 테스트
+                if (CONFIG.API.API_TYPE === 'apps_script') {
+                    try {
+                        const result = await GoogleAppsScriptAPI.testConnection();
+                        if (result.success) {
+                            showConnectionStatus('connected', '✅ 연결됨');
+                            Utils.debugLog('✅ Apps Script 연결 테스트 성공');
+                        } else {
+                            showConnectionStatus('disconnected', '❌ 연결 실패');
+                            Utils.debugLog('⚠️ Apps Script 연결 테스트 실패:', result.message);
+                        }
+                    } catch (error) {
+                        showConnectionStatus('disconnected', '❌ 연결 실패');
+                        Utils.debugLog('⚠️ Apps Script 연결 테스트 실패:', error.message);
+                    }
+                }
+
+                updateInitStatus('세션 확인 중...');
+
+                // 세션 확인
+                const session = SessionManager.getSession();
+                if (session) {
+                    Utils.debugLog('기존 세션 발견:', session.username);
+                    await loginSuccess(session);
+                } else {
+                    showLoginScreen();
+                }
+
+                // ⭐ 수정: 오늘 날짜 설정 (UTC 변환 방지)
+                const today = Utils.getTodayString(); // Utils에서 안전한 날짜 문자열 가져오기
+                document.getElementById('searchDate').value = today;
+                
+                // 기본 필터 설정
+                document.getElementById('processFilter').value = 'all';
+
+                // 이벤트 리스너 등록
+                setupEventListeners();
+
+                // 주기적 연결 확인 시작
+                startConnectionMonitoring();
+
+            } catch (error) {
+                Utils.debugLog('초기화 오류:', error);
+                showError('시스템 초기화 중 오류가 발생했습니다: ' + error.message);
+            }
+        }
+
+        // ⭐ 수정된 테이블 정렬 함수 (안전한 시간 비교)
+        function sortTable(column) {
+            Utils.debugLog('정렬 요청:', { column, currentSort });
+            
+            // 현재 정렬 칼럼과 같으면 방향 변경, 다르면 새로운 칼럼으로 오름차순
+            if (currentSort.column === column) {
+                if (currentSort.direction === 'asc') {
+                    currentSort.direction = 'desc';
+                } else if (currentSort.direction === 'desc') {
+                    currentSort.direction = 'none';
+                } else {
+                    currentSort.direction = 'asc';
+                }
+            } else {
+                currentSort.column = column;
+                currentSort.direction = 'asc';
+            }
+            
+            // 정렬 상태에 따라 데이터 정렬
+            let sortedData = [...currentCallsData];
+            
+            if (currentSort.direction !== 'none') {
+                sortedData.sort((a, b) => {
+                    let valueA, valueB;
+                    
+                    if (column === 'startTime') {
+                        // ⭐ 인입시간 정렬 - 안전한 문자열 비교
+                        try {
+                            const dateA = Utils.formatDateOnly(a.date) || '';
+                            const timeA = Utils.formatTimeOnly(a.startTime) || '';
+                            const dateB = Utils.formatDateOnly(b.date) || '';
+                            const timeB = Utils.formatTimeOnly(b.startTime) || '';
+                            
+                            // YYYY-MM-DD HH:MM:SS 형식으로 조합하여 문자열 비교
+                            valueA = `${dateA} ${timeA}`;
+                            valueB = `${dateB} ${timeB}`;
+                            
+                            Utils.debugLog('시간 정렬 비교:', { 
+                                a: { date: dateA, time: timeA, combined: valueA },
+                                b: { date: dateB, time: timeB, combined: valueB }
+                            });
+                            
+                        } catch (error) {
+                            Utils.debugLog('시간 정렬 오류:', error);
+                            // 오류 발생시 기본값
+                            valueA = `${a.date} ${a.startTime}`;
+                            valueB = `${b.date} ${b.startTime}`;
+                        }
+                    } else if (column === 'callCount') {
+                        // 중복횟수 정렬 - 숫자 비교
+                        valueA = parseInt(a.callCount) || 0;
+                        valueB = parseInt(b.callCount) || 0;
+                    }
+                    
+                    // 정렬 방향에 따른 비교
+                    if (currentSort.direction === 'asc') {
+                        if (typeof valueA === 'string' && typeof valueB === 'string') {
+                            return valueA.localeCompare(valueB);
+                        }
+                        return valueA - valueB;
+                    } else {
+                        if (typeof valueA === 'string' && typeof valueB === 'string') {
+                            return valueB.localeCompare(valueA);
+                        }
+                        return valueB - valueA;
+                    }
+                });
+            }
+            
+            // 정렬 화살표 업데이트
+            updateSortArrows();
+            
+            // 테이블 다시 그리기
+            displayCallsResultsWithData(sortedData);
+            
+            Utils.debugLog('정렬 완료:', { 
+                column, 
+                direction: currentSort.direction, 
+                dataLength: sortedData.length,
+                firstItem: sortedData[0] ? {
+                    phoneNumber: sortedData[0].phoneNumber,
+                    date: Utils.formatDateOnly(sortedData[0].date),
+                    startTime: Utils.formatTimeOnly(sortedData[0].startTime),
+                    callCount: sortedData[0].callCount
+                } : null
+            });
+        }
+
+        // 정렬 화살표 업데이트
+        function updateSortArrows() {
+            // 모든 화살표 초기화
+            const arrows = document.querySelectorAll('.sort-arrow');
+            arrows.forEach(arrow => {
+                arrow.className = 'sort-arrow none';
+            });
+            
+            // 현재 정렬 칼럼의 화살표 업데이트
+            const currentArrow = document.getElementById(`sortArrow-${currentSort.column}`);
+            if (currentArrow) {
+                currentArrow.className = `sort-arrow ${currentSort.direction}`;
+                if (currentSort.direction !== 'none') {
+                    currentArrow.classList.add('active');
+                }
+            }
+        }
+
+        // 초기화 상태 업데이트
+        function updateInitStatus(message) {
+            const statusEl = document.getElementById('initStatus');
+            if (statusEl) {
+                statusEl.textContent = message;
+            }
+        }
+
+        // 연결 상태 표시
+        function showConnectionStatus(status, text) {
+            const statusEl = document.getElementById('connectionStatus');
+            const textEl = document.getElementById('connectionText');
+            
+            statusEl.className = `connection-status ${status} show`;
+            textEl.textContent = text;
+            
+            // 3초 후 자동 숨김 (연결됨 상태만)
+            if (status === 'connected') {
+                setTimeout(() => {
+                    statusEl.classList.remove('show');
+                }, 3000);
+            }
+        }
+
+        // 연결 모니터링 시작
+        function startConnectionMonitoring() {
+            // 5분마다 연결 상태 확인
+            connectionCheckInterval = setInterval(async () => {
+                try {
+                    const result = await GoogleAppsScriptAPI.testConnection();
+                    if (!result.success) {
+                        showConnectionStatus('disconnected', '❌ 연결 끊김');
+                    }
+                } catch (error) {
+                    showConnectionStatus('disconnected', '❌ 연결 끊김');
+                }
+            }, 5 * 60 * 1000); // 5분
+        }
+
+        // 연결 새로고침
+        async function refreshConnection() {
+            showConnectionStatus('testing', '🔄 연결 확인 중...');
+            
+            try {
+                const result = await GoogleAppsScriptAPI.testConnection();
+                if (result.success) {
+                    showConnectionStatus('connected', '✅ 연결 복구됨');
+                } else {
+                    showConnectionStatus('disconnected', '❌ 연결 실패');
+                    alert('❌ 연결 확인 실패: ' + result.message);
+                }
+            } catch (error) {
+                showConnectionStatus('disconnected', '❌ 연결 실패');
+                alert('❌ 연결 확인 실패: ' + error.message);
+            }
+        }
+
+        // 이벤트 리스너 설정
+        function setupEventListeners() {
+            // 로그인 폼
+            document.getElementById('loginForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                handleLogin();
+            });
+
+            // 사용자 폼
+            document.getElementById('userForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                saveUser();
+            });
+
+            // 처리 폼
+            document.getElementById('processForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                saveProcess();
+            });
+
+            // 계정 신청 폼
+            document.getElementById('accountRequestForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                submitAccountRequest();
+            });
+
+            // 승인 폼
+            document.getElementById('approvalForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                approveAccountRequest();
+            });
+
+            // Enter 키 처리
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter') {
+                    const activeModal = document.querySelector('.modal.show');
+                    if (activeModal) {
+                        const primaryButton = activeModal.querySelector('.btn-success, .btn-primary');
+                        if (primaryButton && !primaryButton.disabled) {
+                            primaryButton.click();
+                        }
+                    }
+                }
+                
+                // ESC 키로 모달 닫기
+                if (e.key === 'Escape') {
+                    const openModal = document.querySelector('.modal.show');
+                    if (openModal) {
+                        closeModal(openModal);
+                    }
+                }
+            });
+
+            // 모달 외부 클릭시 닫기
+            document.addEventListener('click', function(e) {
+                if (e.target.classList.contains('modal')) {
+                    closeModal(e.target);
+                }
+            });
+
+            // 페이지 언로드시 정리
+            window.addEventListener('beforeunload', function() {
+                if (connectionCheckInterval) {
+                    clearInterval(connectionCheckInterval);
+                }
+            });
+        }
+
+        // 오류 표시
+        function showError(message) {
+            document.getElementById('initialLoading').innerHTML = `
+                <div class="login-box text-center">
+                    <h2 style="color: #dc2626;">❌ 오류 발생</h2>
+                    <div class="alert alert-error">${message}</div>
+                    <button class="btn btn-primary mt-20" onclick="location.reload()">🔄 다시 시도</button>
+                </div>
+            `;
+        }
+
+        // 로그인 처리
+        async function handleLogin() {
+            const username = document.getElementById('loginUsername').value.trim();
+            const password = document.getElementById('loginPassword').value;
+            const rememberMe = document.getElementById('rememberMe').checked;
+
+            if (!username || !password) {
+                showAlert('loginError', '사용자 ID와 비밀번호를 입력해주세요.', 'error');
+                return;
+            }
+
+            try {
+                Utils.debugLog('로그인 시도:', username);
+                
+                // 버튼 상태 변경
+                const loginBtn = document.querySelector('#loginForm .btn-primary');
+                const btnText = document.getElementById('loginBtnText');
+                loginBtn.disabled = true;
+                btnText.textContent = '로그인 중...';
+                
+                // 사용자 인증 (Apps Script의 authenticate 액션 사용)
+                const result = await GoogleAppsScriptAPI.request('authenticate', { username, password });
+                
+                if (result.success && result.user) {
+                    // 세션 생성
+                    SessionManager.setSession(result.user, rememberMe);
+                    await loginSuccess(result.user);
+                } else {
+                    showAlert('loginError', result.error || '사용자 ID 또는 비밀번호가 올바르지 않습니다.', 'error');
+                }
+            } catch (error) {
+                Utils.debugLog('로그인 오류:', error);
+                showAlert('loginError', '로그인 중 오류가 발생했습니다: ' + error.message, 'error');
+            } finally {
+                // 버튼 복원
+                const loginBtn = document.querySelector('#loginForm .btn-primary');
+                const btnText = document.getElementById('loginBtnText');
+                loginBtn.disabled = false;
+                btnText.textContent = '로그인';
+            }
+        }
+
+        // 로그인 성공 처리
+        async function loginSuccess(user) {
+            currentUser = user;
+            
+            // UI 업데이트
+            document.getElementById('currentUserName').textContent = user.name;
+            document.getElementById('currentUserRole').textContent = getRoleDisplayName(user.role);
+            
+            // 권한에 따른 메뉴 표시
+            const usersMenuBtn = document.getElementById('usersMenuBtn');
+            const requestsMenuBtn = document.getElementById('requestsMenuBtn');
+            
+            if (SessionManager.hasRole('manager')) {
+                usersMenuBtn.classList.remove('hidden');
+                requestsMenuBtn.classList.remove('hidden');
+            } else {
+                usersMenuBtn.classList.add('hidden');
+                requestsMenuBtn.classList.add('hidden');
+            }
+
+            // 화면 전환
+            document.getElementById('initialLoading').classList.add('hidden');
+            document.getElementById('loginContainer').classList.add('hidden');
+            document.getElementById('mainContainer').style.display = 'block';
+
+            Utils.debugLog('로그인 성공:', user.name);
+        }
+
+        // 로그아웃
+        function logout() {
+            if (confirm('로그아웃 하시겠습니까?')) {
+                try {
+                    // 세션 초기화
+                    SessionManager.clearSession();
+                    currentUser = null;
+                    
+                    // 연결 모니터링 중지
+                    if (connectionCheckInterval) {
+                        clearInterval(connectionCheckInterval);
+                        connectionCheckInterval = null;
+                    }
+                    
+                    // 데이터 초기화
+                    currentCallsData = [];
+                    currentUsersData = [];
+                    currentRequestsData = [];
+                    currentProcessingCall = null;
+                    
+                    // 정렬 상태 초기화
+                    currentSort = {
+                        column: 'startTime',
+                        direction: 'desc'
+                    };
+                    
+                    // 로그인 화면으로 이동
+                    showLoginScreen();
+                    Utils.debugLog('로그아웃 완료');
+                    
+                } catch (error) {
+                    Utils.debugLog('로그아웃 중 오류:', error);
+                    // 오류가 발생해도 강제로 로그인 화면으로 이동
+                    showLoginScreen();
+                }
+            }
+        }
+
+        // 로그인 화면 표시
+        function showLoginScreen() {
+            document.getElementById('initialLoading').classList.add('hidden');
+            document.getElementById('loginContainer').classList.remove('hidden');
+            document.getElementById('mainContainer').style.display = 'none';
+            
+            // 폼 초기화
+            document.getElementById('loginForm').reset();
+            hideAlert('loginError');
+        }
+
+        // 섹션 표시
         function showSection(sectionName) {
             // 모든 섹션 숨기기
             document.querySelectorAll('.section').forEach(section => {
@@ -894,51 +956,1141 @@
             });
 
             // 선택된 섹션 표시
-            const targetSection = document.getElementById(sectionName + 'Section');
-            if (targetSection) {
-                targetSection.classList.add('active');
-            }
+            document.getElementById(sectionName + 'Section').classList.add('active');
             
             // 선택된 버튼 활성화
             event.target.classList.add('active');
-        }
 
-        function sortTable(column) {
-            console.log('정렬:', column);
-            // 정렬 로직 구현
-        }
-
-        function searchCalls() {
-            console.log('조회 실행');
-            // 조회 로직 구현
-        }
-
-        function exportToCSV() {
-            console.log('CSV 내보내기');
-            // CSV 내보내기 로직 구현
-        }
-
-        function openProcessModal(index) {
-            console.log('처리 모달 열기:', index);
-            // 처리 모달 로직 구현
-        }
-
-        function refreshConnection() {
-            console.log('연결 새로고침');
-            // 연결 새로고침 로직 구현
-        }
-
-        function logout() {
-            if (confirm('로그아웃 하시겠습니까?')) {
-                console.log('로그아웃');
-                // 로그아웃 로직 구현
+            // 섹션별 초기 로딩
+            if (sectionName === 'users' && SessionManager.hasRole('manager')) {
+                loadUsersSection();
+            } else if (sectionName === 'requests' && SessionManager.hasRole('manager')) {
+                loadRequestsSection();
             }
         }
 
-        // 초기화
-        document.addEventListener('DOMContentLoaded', function() {
-            console.log('시스템 초기화 완료');
-        });
+        // 사용자 관리 섹션 로딩
+        async function loadUsersSection() {
+            if (!SessionManager.hasRole('manager')) {
+                alert('❌ 권한이 없습니다.');
+                return;
+            }
+
+            try {
+                showLoading('usersLoading');
+                
+                // Apps Script의 getUsers 액션 사용
+                const result = await GoogleAppsScriptAPI.getUsers();
+                
+                if (result.success) {
+                    // 승인된 사용자만 표시
+                    currentUsersData = result.users.filter(u => u.status === 'approved') || [];
+                    displayUsersResults(currentUsersData);
+                } else {
+                    throw new Error(result.error || '사용자 목록을 불러올 수 없습니다');
+                }
+                
+                hideLoading('usersLoading');
+                
+            } catch (error) {
+                Utils.debugLog('사용자 섹션 로딩 오류:', error);
+                hideLoading('usersLoading');
+                alert('❌ 사용자 목록을 불러오는 중 오류가 발생했습니다: ' + error.message);
+            }
+        }
+
+        // 계정 신청 관리 섹션 로딩
+        async function loadRequestsSection() {
+            if (!SessionManager.hasRole('manager')) {
+                alert('❌ 권한이 없습니다.');
+                return;
+            }
+
+            try {
+                showLoading('requestsLoading');
+                
+                const result = await GoogleAppsScriptAPI.getPendingRequests();
+                
+                if (result.success) {
+                    currentRequestsData = result.requests || [];
+                    displayRequestsResults(currentRequestsData);
+                } else {
+                    throw new Error(result.error || '신청 목록을 불러올 수 없습니다');
+                }
+                
+                hideLoading('requestsLoading');
+                
+            } catch (error) {
+                Utils.debugLog('신청 섹션 로딩 오류:', error);
+                hideLoading('requestsLoading');
+                alert('❌ 신청 목록을 불러오는 중 오류가 발생했습니다: ' + error.message);
+            }
+        }
+
+        // 계정 신청 목록 결과 표시
+        function displayRequestsResults(requests) {
+            const tbody = document.querySelector('#requestsTable tbody');
+            const noRequestsMsg = document.getElementById('noRequestsMessage');
+            
+            tbody.innerHTML = '';
+
+            if (requests.length === 0) {
+                showElement('noRequestsMessage');
+                return;
+            }
+
+            hideElement('noRequestsMessage');
+
+            requests.forEach((request, index) => {
+                const row = tbody.insertRow();
+                row.innerHTML = `
+                    <td class="time-display">${Utils.formatKoreanDateTime(request.requestDate)}</td>
+                    <td>${request.name}</td>
+                    <td>${request.email}</td>
+                    <td>${request.phone}</td>
+                    <td>${request.department}</td>
+                    <td><span class="status-badge status-${request.role}">${getRoleDisplayName(request.role)}</span></td>
+                    <td class="phone-number">${request.requestedUsername || '자동 생성'}</td>
+                    <td><span class="status-badge status-pending">⏳ 대기중</span></td>
+                    <td style="white-space: nowrap;">
+                        <button class="btn btn-success btn-small" onclick="openApprovalModal(${index})" style="margin-right: 5px;">
+                            ✅ 승인
+                        </button>
+                        <button class="btn btn-danger btn-small" onclick="rejectRequest(${index})">
+                            ❌ 거부
+                        </button>
+                    </td>
+                `;
+            });
+        }
+
+        // 계정 신청 승인 모달 열기
+        function openApprovalModal(index) {
+            const request = currentRequestsData[index];
+            
+            document.getElementById('approvalRequestId').value = request.id;
+            document.getElementById('approvalRequestName').textContent = request.name;
+            document.getElementById('approvalRequestInfo').textContent = 
+                `${request.email} | ${request.department} | ${getRoleDisplayName(request.role)}`;
+            
+            // 희망 사용자 ID가 있으면 미리 채워넣기
+            document.getElementById('approvalUsername').value = request.requestedUsername || '';
+            document.getElementById('approvalPassword').value = '';
+            document.getElementById('approvalNote').value = '';
+
+            hideAlert('approvalModalError');
+            document.getElementById('approvalModal').classList.add('show');
+            
+            setTimeout(() => {
+                const usernameField = document.getElementById('approvalUsername');
+                if (usernameField.value) {
+                    document.getElementById('approvalPassword').focus();
+                } else {
+                    usernameField.focus();
+                }
+            }, 100);
+        }
+
+        // 승인 모달 닫기
+        function closeApprovalModal() {
+            closeModal('approvalModal');
+            hideAlert('approvalModalError');
+        }
+
+        // 계정 신청 승인 처리
+        async function approveAccountRequest() {
+            const requestId = document.getElementById('approvalRequestId').value;
+            const username = document.getElementById('approvalUsername').value.trim();
+            const password = document.getElementById('approvalPassword').value;
+            const note = document.getElementById('approvalNote').value.trim();
+
+            if (!username || !password) {
+                showAlert('approvalModalError', '사용자 ID와 임시 비밀번호를 모두 입력해주세요.', 'error');
+                return;
+            }
+
+            const passwordValidation = Utils.isValidPassword(password);
+            if (!passwordValidation.valid) {
+                showAlert('approvalModalError', passwordValidation.message, 'error');
+                return;
+            }
+
+            try {
+                // 버튼 상태 변경
+                const approveBtn = document.querySelector('#approvalModal .btn-success');
+                const btnText = document.getElementById('approvalSaveBtnText');
+                approveBtn.disabled = true;
+                btnText.textContent = '승인 처리 중...';
+
+                const approvalData = {
+                    username: username,
+                    password: password,
+                    note: note
+                };
+
+                const result = await GoogleAppsScriptAPI.approveRequest(requestId, approvalData);
+
+                if (result.success) {
+                    closeApprovalModal();
+                    await loadRequestsSection(); // 목록 새로고침
+                    
+                    alert(`✅ 계정이 승인되어 생성되었습니다!\n\n👤 사용자: ${result.user.name}\n🆔 사용자 ID: ${result.user.username}\n📧 이메일: ${result.user.email}\n\n💡 생성된 임시 비밀번호를 사용자에게 전달해주세요.`);
+                } else {
+                    showAlert('approvalModalError', result.error || '승인 처리 중 오류가 발생했습니다.', 'error');
+                }
+
+            } catch (error) {
+                Utils.debugLog('승인 처리 오류:', error);
+                showAlert('approvalModalError', '승인 처리 중 오류가 발생했습니다: ' + error.message, 'error');
+            } finally {
+                // 버튼 복원
+                const approveBtn = document.querySelector('#approvalModal .btn-success');
+                const btnText = document.getElementById('approvalSaveBtnText');
+                approveBtn.disabled = false;
+                btnText.textContent = '✅ 승인 및 계정 생성';
+            }
+        }
+
+        // 계정 신청 거부
+        async function rejectRequest(index) {
+            const request = currentRequestsData[index];
+            
+            const reason = prompt(`⚠️ 계정 신청을 거부하시겠습니까?\n\n신청자: ${request.name}\n이메일: ${request.email}\n\n거부 사유를 입력해주세요 (선택사항):`);
+            
+            if (reason === null) return; // 취소한 경우
+
+            try {
+                const result = await GoogleAppsScriptAPI.rejectRequest(request.id, reason);
+
+                if (result.success) {
+                    await loadRequestsSection(); // 목록 새로고침
+                    alert(`❌ 계정 신청이 거부되었습니다.\n\n신청자: ${request.name}\n사유: ${reason || '사유 없음'}`);
+                } else {
+                    alert('❌ 거부 처리 중 오류가 발생했습니다: ' + result.error);
+                }
+
+            } catch (error) {
+                Utils.debugLog('거부 처리 오류:', error);
+                alert('❌ 거부 처리 중 오류가 발생했습니다: ' + error.message);
+            }
+        }
+
+        // 사용자 목록 결과 표시
+        function displayUsersResults(users) {
+            const tbody = document.querySelector('#usersTable tbody');
+            tbody.innerHTML = '';
+
+            if (users.length === 0) {
+                const row = tbody.insertRow();
+                row.innerHTML = `
+                    <td colspan="8" class="text-center" style="padding: 40px; color: #666;">
+                        👥 등록된 사용자가 없습니다.
+                    </td>
+                `;
+                return;
+            }
+
+            users.forEach((user, index) => {
+                const row = tbody.insertRow();
+                const statusClass = user.status === 'approved' ? 'status-processed' : 'status-pending';
+                const statusText = user.status === 'approved' ? '✅ 활성' : '⏳ 대기중';
+                
+                row.innerHTML = `
+                    <td class="phone-number">${user.username}</td>
+                    <td>${user.name}</td>
+                    <td>${user.email}</td>
+                    <td><span class="status-badge status-${user.role}">${getRoleDisplayName(user.role)}</span></td>
+                    <td><span class="status-badge ${statusClass}">${statusText}</span></td>
+                    <td class="time-display">${Utils.formatDateOnly(user.createdAt) || '-'}</td>
+                    <td class="time-display">${Utils.formatKoreanDateTime(user.lastLogin) || '-'}</td>
+                    <td style="white-space: nowrap;">
+                        <button class="btn btn-primary btn-small" onclick="editUser(${index})" style="margin-right: 5px;">✏️ 수정</button>
+                        ${user.username !== currentUser.username ? 
+                            `<button class="btn btn-danger btn-small" onclick="deleteUser(${index})">🗑️ 삭제</button>` : 
+                            '<span class="text-small">현재 사용자</span>'
+                        }
+                    </td>
+                `;
+            });
+        }
+
+        // 권한 표시명 반환
+        function getRoleDisplayName(role) {
+            const roleNames = {
+                'admin': '시스템 관리자',
+                'manager': '관리자', 
+                'user': '일반 사용자'
+            };
+            return roleNames[role] || role;
+        }
+
+        // 사용자 모달 열기
+        function openUserModal(user = null) {
+            const isEdit = !!user;
+            
+            document.getElementById('userModalTitle').textContent = isEdit ? '✏️ 사용자 수정' : '➕ 사용자 추가';
+            
+            if (isEdit) {
+                document.getElementById('userId').value = user.id;
+                document.getElementById('userUsername').value = user.username;
+                document.getElementById('userUsername').disabled = true;
+                document.getElementById('userPassword').required = false;
+                document.getElementById('userPassword').placeholder = '변경하지 않으려면 비워두세요';
+                document.getElementById('userName').value = user.name;
+                document.getElementById('userEmail').value = user.email;
+                document.getElementById('userRole').value = user.role;
+            } else {
+                document.getElementById('userForm').reset();
+                document.getElementById('userUsername').disabled = false;
+                document.getElementById('userPassword').required = true;
+                document.getElementById('userPassword').placeholder = '6자 이상 입력하세요';
+            }
+
+            hideAlert('userModalError');
+            document.getElementById('userModal').classList.add('show');
+            
+            // 첫 번째 입력 필드에 포커스
+            setTimeout(() => {
+                if (!isEdit) {
+                    document.getElementById('userUsername').focus();
+                } else {
+                    document.getElementById('userName').focus();
+                }
+            }, 100);
+        }
+
+        // 사용자 모달 닫기
+        function closeUserModal() {
+            closeModal('userModal');
+        }
+
+        // 사용자 수정
+        function editUser(index) {
+            const user = currentUsersData[index];
+            openUserModal(user);
+        }
+
+        // 사용자 삭제
+        async function deleteUser(index) {
+            const user = currentUsersData[index];
+            
+            if (confirm(`⚠️ 사용자 '${user.name}'를 삭제하시겠습니까?\n\n이 작업은 되돌릴 수 없습니다.`)) {
+                try {
+                    // Apps Script의 deleteUser 액션 사용
+                    const result = await GoogleAppsScriptAPI.deleteUser(user.id);
+
+                    if (result.success) {
+                        await loadUsersSection();
+                        alert('✅ 사용자가 삭제되었습니다.');
+                    } else {
+                        alert('❌ 삭제 중 오류가 발생했습니다: ' + result.error);
+                    }
+                } catch (error) {
+                    Utils.debugLog('사용자 삭제 오류:', error);
+                    alert('❌ 삭제 중 오류가 발생했습니다: ' + error.message);
+                }
+            }
+        }
+
+        // 사용자 저장
+        async function saveUser() {
+            const userId = document.getElementById('userId').value;
+            const username = document.getElementById('userUsername').value.trim();
+            const password = document.getElementById('userPassword').value;
+            const name = document.getElementById('userName').value.trim();
+            const email = document.getElementById('userEmail').value.trim();
+            const role = document.getElementById('userRole').value;
+
+            // 유효성 검사
+            if (!username || !name || !email || !role) {
+                showAlert('userModalError', '필수 항목을 모두 입력해주세요.', 'error');
+                return;
+            }
+
+            if (!Utils.isValidEmail(email)) {
+                showAlert('userModalError', '올바른 이메일 주소를 입력해주세요.', 'error');
+                return;
+            }
+
+            if (!userId && !password) {
+                showAlert('userModalError', '새 사용자는 비밀번호가 필요합니다.', 'error');
+                return;
+            }
+
+            if (password) {
+                const passwordValidation = Utils.isValidPassword(password);
+                if (!passwordValidation.valid) {
+                    showAlert('userModalError', passwordValidation.message, 'error');
+                    return;
+                }
+            }
+
+            try {
+                const isEdit = !!userId;
+                
+                // 버튼 상태 변경
+                const saveBtn = document.querySelector('#userModal .btn-success');
+                const btnText = document.getElementById('userSaveBtnText');
+                saveBtn.disabled = true;
+                btnText.textContent = '저장 중...';
+                
+                const userData = {
+                    id: userId || Utils.generateUUID(),
+                    username: username,
+                    name: name,
+                    email: email,
+                    role: role,
+                    status: 'approved', // 관리자가 직접 생성하는 경우는 바로 승인
+                    createdAt: isEdit ? null : Utils.getCurrentDateTime(),
+                    lastLogin: isEdit ? null : null
+                };
+
+                // 비밀번호가 있으면 해시 처리
+                if (password) {
+                    userData.passwordHash = Utils.simpleHash(password, username);
+                }
+
+                let result;
+                if (isEdit) {
+                    // Apps Script의 updateUser 액션 사용
+                    result = await GoogleAppsScriptAPI.updateUser(userId, userData);
+                } else {
+                    // Apps Script의 addUser 액션 사용
+                    result = await GoogleAppsScriptAPI.addUser(userData);
+                }
+
+                if (result.success) {
+                    await loadUsersSection();
+                    closeUserModal();
+                    
+                    alert(`✅ ${isEdit ? '사용자가 수정되었습니다.' : '사용자가 추가되었습니다.'}`);
+                } else {
+                    showAlert('userModalError', result.error || '저장 중 오류가 발생했습니다.', 'error');
+                }
+
+            } catch (error) {
+                Utils.debugLog('사용자 저장 오류:', error);
+                showAlert('userModalError', '사용자 저장 중 오류가 발생했습니다: ' + error.message, 'error');
+            } finally {
+                // 버튼 복원
+                const saveBtn = document.querySelector('#userModal .btn-success');
+                const btnText = document.getElementById('userSaveBtnText');
+                saveBtn.disabled = false;
+                btnText.textContent = '💾 저장';
+            }
+        }
+
+        // ⭐ 수정된 Missing Call 조회 (날짜 검증 추가)
+        async function searchCalls() {
+            const searchDate = document.getElementById('searchDate').value;
+            const processFilter = document.getElementById('processFilter').value;
+            
+            if (!searchDate || searchDate.trim() === '') {
+                alert('📅 조회할 날짜를 선택해주세요.');
+                return;
+            }
+
+            // ⭐ 날짜 검증 추가
+            if (!searchDate.match(/^\d{4}-\d{2}-\d{2}$/)) {
+                alert('⚠️ 올바른 날짜 형식이 아닙니다. YYYY-MM-DD 형식으로 입력해주세요.');
+                return;
+            }
+
+            try {
+                showLoading('loadingMessage');
+                hideElement('callsResults');
+                hideElement('noDataMessage');
+                
+                Utils.debugLog('Missing Call 조회 시작:', { date: searchDate });
+                
+                // Apps Script의 getCalls 액션 사용
+                const result = await GoogleAppsScriptAPI.getCalls({ date: searchDate });
+                
+                Utils.debugLog('Apps Script 응답:', result);
+                
+                let data = [];
+                if (result.success) {
+                    data = processCallData(result.calls || []);
+                    
+                    // 처리 상태 필터 적용
+                    if (processFilter !== 'all') {
+                        data = data.filter(call => {
+                            if (processFilter === 'processed') {
+                                return call.processStatus && call.processStatus.trim() !== '';
+                            } else if (processFilter === 'pending') {
+                                return !call.processStatus || call.processStatus.trim() === '';
+                            }
+                            return true;
+                        });
+                    }
+                } else {
+                    throw new Error(result.error || '데이터를 불러올 수 없습니다');
+                }
+                
+                currentCallsData = data;
+                
+                if (data.length > 0) {
+                    displayCallsResults(data);
+                    showElement('callsResults');
+                } else {
+                    // 필터에 따른 메시지 변경
+                    const noDataTitle = document.getElementById('noDataTitle');
+                    const noDataSubtitle = document.getElementById('noDataSubtitle');
+                    
+                    if (processFilter === 'processed') {
+                        noDataTitle.textContent = '📭 처리 완료된 데이터가 없습니다';
+                        noDataSubtitle.textContent = '해당 날짜에 처리 완료된 Missing Call이 없습니다.';
+                    } else if (processFilter === 'pending') {
+                        noDataTitle.textContent = '📭 미처리 데이터가 없습니다';
+                        noDataSubtitle.textContent = '해당 날짜에 미처리 Missing Call이 없습니다.';
+                    } else {
+                        noDataTitle.textContent = '📭 조회된 데이터가 없습니다';
+                        noDataSubtitle.textContent = '다른 날짜를 선택해서 조회해보세요.';
+                    }
+                    
+                    showElement('noDataMessage');
+                }
+                
+                hideLoading('loadingMessage');
+                
+            } catch (error) {
+                Utils.debugLog('조회 오류:', error);
+                hideLoading('loadingMessage');
+                alert('❌ 데이터 조회 중 오류가 발생했습니다: ' + error.message);
+            }
+        }
+
+        // ⭐ 수정된 콜 데이터 처리 (안전한 시간 정렬)
+        function processCallData(rawCalls) {
+            const groups = {};
+            
+            // 전화번호별로 그룹핑
+            rawCalls.forEach((call, index) => {
+                const phoneNumber = call.phoneNumber;
+                if (!groups[phoneNumber]) {
+                    groups[phoneNumber] = [];
+                }
+                groups[phoneNumber].push({...call, originalIndex: index});
+            });
+
+            const processedData = [];
+
+            Object.keys(groups).forEach(phoneNumber => {
+                const calls = groups[phoneNumber];
+                
+                // ⭐ 안전한 시간 정렬
+                calls.sort((a, b) => {
+                    try {
+                        // Utils를 사용한 안전한 시간 문자열 생성 후 비교
+                        const timeStrA = Utils.createSortableTimeString(a.date, a.startTime);
+                        const timeStrB = Utils.createSortableTimeString(b.date, b.startTime);
+                        
+                        Utils.debugLog('시간 정렬 비교:', { 
+                            a: { date: a.date, startTime: a.startTime, combined: timeStrA },
+                            b: { date: b.date, startTime: b.startTime, combined: timeStrB }
+                        });
+                        
+                        // 문자열로 비교 (YYYY-MM-DD HH:MM:SS 형식)
+                        return timeStrA.localeCompare(timeStrB);
+                    } catch (error) {
+                        Utils.debugLog('시간 정렬 오류:', error);
+                        // 오류 발생시 원본 순서 유지
+                        return 0;
+                    }
+                });
+
+                // OB콜 처리가 된 콜들을 기준으로 그룹 분리
+                let currentGroup = [];
+                
+                for (let i = 0; i < calls.length; i++) {
+                    const call = calls[i];
+                    currentGroup.push(call);
+                    
+                    // 다음 콜이 있고, 현재 콜이 처리되었으며, 다음 콜이 처리되지 않았다면 그룹 종료
+                    if (i < calls.length - 1) {
+                        const nextCall = calls[i + 1];
+                        if (call.processStatus && !nextCall.processStatus) {
+                            // 현재 그룹 처리
+                            if (currentGroup.length > 0) {
+                                const latestCall = currentGroup[currentGroup.length - 1];
+                                processedData.push({
+                                    ...latestCall,
+                                    callCount: currentGroup.length,
+                                    groupCalls: currentGroup.map(c => ({...c})) // 깊은 복사
+                                });
+                            }
+                            currentGroup = [];
+                        }
+                    }
+                }
+                
+                // 마지막 그룹 처리
+                if (currentGroup.length > 0) {
+                    const latestCall = currentGroup[currentGroup.length - 1];
+                    processedData.push({
+                        ...latestCall,
+                        callCount: currentGroup.length,
+                        groupCalls: currentGroup.map(c => ({...c})) // 깊은 복사
+                    });
+                }
+            });
+
+            // 디버그: 처리된 데이터 로그
+            Utils.debugLog('processCallData 완료:', {
+                rawCount: rawCalls.length,
+                processedCount: processedData.length,
+                sampleData: processedData.slice(0, 2).map(item => ({
+                    phoneNumber: item.phoneNumber,
+                    date: Utils.formatDateOnly(item.date),
+                    startTime: Utils.formatTimeOnly(item.startTime),
+                    callCount: item.callCount
+                }))
+            });
+
+            return processedData;
+        }
+
+        // 콜 데이터 결과 표시 (기본 정렬 적용)
+        function displayCallsResults(data) {
+            // 기본 정렬 상태 설정 (인입시간 내림차순)
+            currentSort = {
+                column: 'startTime',
+                direction: 'desc'
+            };
+            
+            // 기본 정렬 적용
+            const sortedData = [...data].sort((a, b) => {
+                const timeStrA = Utils.createSortableTimeString(a.date, a.startTime);
+                const timeStrB = Utils.createSortableTimeString(b.date, b.startTime);
+                return timeStrB.localeCompare(timeStrA); // 내림차순 (늦은 시간부터)
+            });
+            
+            // 정렬 화살표 업데이트
+            updateSortArrows();
+            
+            // 실제 테이블 표시
+            displayCallsResultsWithData(sortedData);
+        }
+
+        // 콜 데이터 결과 표시 (데이터 전달받는 버전)
+        function displayCallsResultsWithData(data) {
+            const countDiv = document.getElementById('resultsCount');
+            const tbody = document.querySelector('#callsTable tbody');
+            const processFilter = document.getElementById('processFilter').value;
+            
+            // 필터 상태에 따른 제목 변경
+            let filterText = '';
+            if (processFilter === 'processed') {
+                filterText = ' (처리 완료만)';
+            } else if (processFilter === 'pending') {
+                filterText = ' (미처리만)';
+            }
+
+            countDiv.textContent = `📊 조회 결과: ${data.length}건${filterText}`;
+            tbody.innerHTML = '';
+
+            data.forEach((call, index) => {
+                const row = tbody.insertRow();
+                const waitMinutes = Math.round(call.duration / 60);
+                
+                row.innerHTML = `
+                    <td>${Utils.formatDateOnly(call.date)}</td>
+                    <td class="time-display">${Utils.formatTimeOnly(call.startTime)}</td>
+                    <td class="time-display">${waitMinutes}분</td>
+                    <td class="phone-number">${call.phoneNumber}</td>
+                    <td>${call.queue}</td>
+                    <td><span class="call-count">${call.callCount}번</span></td>
+                    <td>
+                        <span class="status-badge ${call.processStatus ? 'status-processed' : 'status-pending'}">
+                            ${call.processStatus ? '✅ 처리완료' : '⏳ 미처리'}
+                        </span>
+                    </td>
+                    <td>${call.processManager || '-'}</td>
+                    <td>
+                        <button class="btn btn-primary btn-small" onclick="openProcessModal(${currentCallsData.findIndex(c => c.phoneNumber === call.phoneNumber && c.startTime === call.startTime)})">
+                            ${call.processStatus ? '✏️ 수정' : '📞 처리'}
+                        </button>
+                    </td>
+                `;
+            });
+        }
+
+        // CSV 내보내기
+        function exportToCSV() {
+            if (currentCallsData.length === 0) {
+                alert('📭 내보낼 데이터가 없습니다.');
+                return;
+            }
+
+            const headers = ['발생일', '인입시간', '대기시간(분)', '전화번호', '인입큐', '중복횟수', '처리상태', '처리담당자'];
+            const csvContent = [
+                headers.join(','),
+                ...currentCallsData.map(call => [
+                    Utils.formatDateOnly(call.date),
+                    Utils.formatTimeOnly(call.startTime),
+                    Math.round(call.duration / 60),
+                    call.phoneNumber,
+                    `"${call.queue}"`,
+                    call.callCount,
+                    call.processStatus || '미처리',
+                    call.processManager || ''
+                ].join(','))
+            ].join('\n');
+
+            const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            const url = URL.createObjectURL(blob);
+            link.setAttribute('href', url);
+            link.setAttribute('download', `missing_calls_${document.getElementById('searchDate').value}.csv`);
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        // OB콜 처리 모달 열기
+        function openProcessModal(index) {
+            const call = currentCallsData[index];
+            currentProcessingCall = { ...call, index };
+
+            Utils.debugLog('선택된 콜 데이터:', call);
+            Utils.debugLog('설정된 currentProcessingCall:', currentProcessingCall);
+
+            document.getElementById('modalPhoneNumber').textContent = call.phoneNumber;
+            document.getElementById('modalCallInfo').textContent = 
+                `${call.callCount > 1 ? call.callCount + '번 중복 | ' : ''}${call.queue} | ${Math.round(call.duration / 60)}분 대기`;
+            
+            document.getElementById('processStatus').value = call.processStatus || '';
+            document.getElementById('processManager').value = call.processManager || currentUser.name;
+            document.getElementById('processNote').value = '';
+
+            hideAlert('processModalError');
+            document.getElementById('processModal').classList.add('show');
+            
+            // 처리 상태에 포커스
+            setTimeout(() => {
+                if (!call.processStatus) {
+                    document.getElementById('processStatus').focus();
+                } else {
+                    document.getElementById('processManager').focus();
+                }
+            }, 100);
+        }
+
+        // OB콜 처리 모달 닫기
+        function closeProcessModal() {
+            closeModal('processModal');
+            currentProcessingCall = null;
+            hideAlert('processModalError');
+        }
+
+        // OB콜 처리 저장
+        async function saveProcess() {
+            const processStatus = document.getElementById('processStatus').value;
+            const processManager = document.getElementById('processManager').value.trim();
+            const processNote = document.getElementById('processNote').value.trim();
+
+            if (!processStatus || !processManager) {
+                showAlert('processModalError', '처리 여부와 처리담당자를 모두 입력해주세요.', 'error');
+                return;
+            }
+
+            try {
+                // 버튼 상태 변경
+                const saveBtn = document.querySelector('#processModal .btn-success');
+                const btnText = document.getElementById('processSaveBtnText');
+                saveBtn.disabled = true;
+                btnText.textContent = '저장 중...';
+
+                // 디버그 로그 추가
+                Utils.debugLog('현재 처리할 콜 정보:', currentProcessingCall);
+
+                if (!currentProcessingCall) {
+                    throw new Error('처리할 콜 정보가 없습니다.');
+                }
+
+                // 그룹의 모든 콜에 대해 업데이트
+                const callsToUpdate = currentProcessingCall.groupCalls || [currentProcessingCall];
+                
+                Utils.debugLog('업데이트할 콜 목록:', callsToUpdate);
+
+                // 업데이트할 콜들의 rowIndex 검증
+                const validCalls = [];
+                for (const call of callsToUpdate) {
+                    Utils.debugLog('처리 중인 개별 콜:', call);
+                    
+                    if (!call.rowIndex) {
+                        Utils.debugLog('rowIndex가 없는 콜 발견:', call);
+                        // rowIndex가 없다면 현재 처리 중인 콜의 rowIndex 사용 시도
+                        if (currentProcessingCall.rowIndex) {
+                            call.rowIndex = currentProcessingCall.rowIndex;
+                            Utils.debugLog('rowIndex를 currentProcessingCall에서 복사:', call.rowIndex);
+                        } else {
+                            throw new Error(`rowIndex가 없습니다. 콜 정보: ${JSON.stringify(call)}`);
+                        }
+                    }
+                    
+                    // rowIndex가 숫자인지 확인
+                    const rowIndex = parseInt(call.rowIndex);
+                    if (isNaN(rowIndex) || rowIndex < 2) {
+                        throw new Error(`잘못된 rowIndex: ${call.rowIndex}`);
+                    }
+                    
+                    validCalls.push({
+                        ...call,
+                        rowIndex: rowIndex
+                    });
+                }
+
+                Utils.debugLog('검증된 콜 목록:', validCalls);
+
+                // 각 콜에 대해 업데이트 실행
+                for (const call of validCalls) {
+                    const updateData = {
+                        rowIndex: call.rowIndex,
+                        processStatus: processStatus,
+                        processManager: processManager,
+                        processNote: processNote
+                    };
+                    
+                    Utils.debugLog('전송할 업데이트 데이터:', updateData);
+                    
+                    // Apps Script의 updateCall 액션 사용
+                    const result = await GoogleAppsScriptAPI.updateCall(updateData);
+                    
+                    if (!result.success) {
+                        throw new Error(result.error || '업데이트 실패');
+                    }
+                    
+                    Utils.debugLog('개별 콜 업데이트 성공:', { rowIndex: call.rowIndex, result });
+                }
+
+                closeProcessModal();
+                
+                // 전체 새로고침 대신 해당 행만 업데이트
+                updateProcessedCallInTable(currentProcessingCall.index, processStatus, processManager);
+                
+                // 성공 메시지 (더 간단하게)
+                Utils.showToast(`✅ ${currentProcessingCall.phoneNumber} 처리 완료 (${processStatus})`, 'success');
+
+            } catch (error) {
+                Utils.debugLog('처리 저장 오류:', error);
+                showAlert('processModalError', '처리 저장 중 오류가 발생했습니다: ' + error.message, 'error');
+            } finally {
+                // 버튼 복원
+                const saveBtn = document.querySelector('#processModal .btn-success');
+                const btnText = document.getElementById('processSaveBtnText');
+                saveBtn.disabled = false;
+                btnText.textContent = '💾 처리 완료';
+            }
+        }
+
+        // 처리 후 다음 미처리 건으로 이동
+        async function saveAndNext() {
+            const processStatus = document.getElementById('processStatus').value;
+            const processManager = document.getElementById('processManager').value.trim();
+
+            if (!processStatus || !processManager) {
+                showAlert('processModalError', '처리 여부와 처리담당자를 모두 입력해주세요.', 'error');
+                return;
+            }
+
+            try {
+                // 현재 처리 저장
+                const saveBtn = document.querySelector('#processModal .btn-primary'); // "처리 후 다음" 버튼
+                const btnText = saveBtn.textContent;
+                
+                saveBtn.disabled = true;
+                saveBtn.textContent = '⏳ 처리 중...';
+
+                // 현재 콜 처리 (saveProcess와 동일한 로직이지만 UI 업데이트만)
+                const currentIndex = currentProcessingCall.index;
+                const callsToUpdate = currentProcessingCall.groupCalls || [currentProcessingCall];
+
+                for (const call of callsToUpdate) {
+                    if (!call.rowIndex) {
+                        if (currentProcessingCall.rowIndex) {
+                            call.rowIndex = currentProcessingCall.rowIndex;
+                        } else {
+                            throw new Error('rowIndex가 없습니다.');
+                        }
+                    }
+
+                    const updateData = {
+                        rowIndex: parseInt(call.rowIndex),
+                        processStatus: processStatus,
+                        processManager: processManager,
+                        processNote: document.getElementById('processNote').value.trim()
+                    };
+
+                    const result = await GoogleAppsScriptAPI.updateCall(updateData);
+                    if (!result.success) {
+                        throw new Error(result.error || '업데이트 실패');
+                    }
+                }
+
+                // 현재 처리된 항목 UI 업데이트
+                updateProcessedCallInTable(currentIndex, processStatus, processManager);
+
+                // 다음 미처리 건 찾기
+                let nextIndex = -1;
+                for (let i = currentIndex + 1; i < currentCallsData.length; i++) {
+                    if (!currentCallsData[i].processStatus || currentCallsData[i].processStatus.trim() === '') {
+                        nextIndex = i;
+                        break;
+                    }
+                }
+
+                // 다음 건이 없으면 처음부터 다시 찾기
+                if (nextIndex === -1) {
+                    for (let i = 0; i < currentIndex; i++) {
+                        if (!currentCallsData[i].processStatus || currentCallsData[i].processStatus.trim() === '') {
+                            nextIndex = i;
+                            break;
+                        }
+                    }
+                }
+
+                if (nextIndex !== -1) {
+                    // 다음 미처리 건으로 모달 전환
+                    Utils.showToast(`✅ ${currentProcessingCall.phoneNumber} 처리 완료`, 'success');
+                    
+                    // 잠시 대기 후 다음 건 열기
+                    setTimeout(() => {
+                        openProcessModal(nextIndex);
+                        
+                        // 테이블에서 해당 행으로 스크롤
+                        const tableBody = document.querySelector('#callsTable tbody');
+                        const targetRow = tableBody.querySelectorAll('tr')[nextIndex];
+                        if (targetRow) {
+                            targetRow.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                            // 행 하이라이트
+                            targetRow.style.backgroundColor = '#fef3c7';
+                            setTimeout(() => {
+                                targetRow.style.backgroundColor = '';
+                            }, 2000);
+                        }
+                    }, 500);
+                } else {
+                    // 더 이상 미처리 건이 없음
+                    closeProcessModal();
+                    Utils.showToast(`✅ ${currentProcessingCall.phoneNumber} 처리 완료 - 미처리 건이 더 없습니다`, 'success');
+                    alert('🎉 모든 건이 처리되었습니다!');
+                }
+
+            } catch (error) {
+                Utils.debugLog('처리 후 다음 오류:', error);
+                showAlert('processModalError', '처리 저장 중 오류가 발생했습니다: ' + error.message, 'error');
+            } finally {
+                // 버튼 복원
+                const saveBtn = document.querySelector('#processModal .btn-primary');
+                saveBtn.disabled = false;
+                saveBtn.textContent = '⏩ 처리 후 다음';
+            }
+        }
+
+        // 특정 콜의 처리 상태를 테이블에서 업데이트 (새로고침 없이)
+        function updateProcessedCallInTable(callIndex, processStatus, processManager) {
+            try {
+                // 현재 데이터 업데이트
+                if (currentCallsData[callIndex]) {
+                    currentCallsData[callIndex].processStatus = processStatus;
+                    currentCallsData[callIndex].processManager = processManager;
+                }
+
+                // 테이블 행 찾기
+                const tableBody = document.querySelector('#callsTable tbody');
+                const rows = tableBody.querySelectorAll('tr');
+                
+                if (rows[callIndex]) {
+                    const row = rows[callIndex];
+                    const cells = row.querySelectorAll('td');
+                    
+                    // 처리상태 칼럼 업데이트 (7번째 칼럼, 인덱스 6)
+                    if (cells[6]) {
+                        cells[6].innerHTML = `
+                            <span class="status-badge status-processed">
+                                ✅ 처리완료
+                            </span>
+                        `;
+                    }
+                    
+                    // 처리담당자 칼럼 업데이트 (8번째 칼럼, 인덱스 7)
+                    if (cells[7]) {
+                        cells[7].textContent = processManager;
+                    }
+                    
+                    // 액션 버튼 업데이트 (9번째 칼럼, 인덱스 8)
+                    if (cells[8]) {
+                        cells[8].innerHTML = `
+                            <button class="btn btn-primary btn-small" onclick="openProcessModal(${callIndex})">
+                                ✏️ 수정
+                            </button>
+                        `;
+                    }
+                    
+                    // 행 하이라이트 효과 (일시적)
+                    row.style.backgroundColor = '#d1fae5';
+                    setTimeout(() => {
+                        row.style.backgroundColor = '';
+                    }, 2000);
+                    
+                    Utils.debugLog('테이블 행 업데이트 완료:', { callIndex, processStatus, processManager });
+                }
+                
+            } catch (error) {
+                Utils.debugLog('테이블 행 업데이트 오류:', error);
+                // 오류 발생시 전체 새로고침으로 폴백
+                setTimeout(() => searchCalls(), 1000);
+            }
+        }
+
+        // 비밀번호 표시/숨기기 토글
+        function togglePassword(inputId) {
+            const input = document.getElementById(inputId);
+            const button = input.nextElementSibling;
+            
+            if (input.type === 'password') {
+                input.type = 'text';
+                button.textContent = '🙈';
+            } else {
+                input.type = 'password';
+                button.textContent = '👁️';
+            }
+        }
+
+        // 알림 메시지 표시
+        function showAlert(elementId, message, type = 'info') {
+            const element = document.getElementById(elementId);
+            element.textContent = message;
+            element.className = `alert alert-${type}`;
+            element.classList.remove('hidden');
+            
+            if (type === 'success') {
+                setTimeout(() => hideAlert(elementId), CONFIG.UI.TOAST_DURATION);
+            }
+        }
+
+        // 알림 메시지 숨기기
+        function hideAlert(elementId) {
+            document.getElementById(elementId).classList.add('hidden');
+        }
+
+        // 요소 표시
+        function showElement(elementId) {
+            document.getElementById(elementId).classList.remove('hidden');
+        }
+
+        // 요소 숨기기
+        function hideElement(elementId) {
+            document.getElementById(elementId).classList.add('hidden');
+        }
+
+        // 모달 닫기
+        function closeModal(modal) {
+            if (typeof modal === 'string') {
+                modal = document.getElementById(modal);
+            }
+            modal.classList.remove('show');
+        }
+
+        // 로딩 표시
+        function showLoading(elementId) {
+            showElement(elementId);
+        }
+
+        // 로딩 숨기기
+        function hideLoading(elementId) {
+            hideElement(elementId);
+        }
+
+        // 계정 신청 모달 열기
+        function openAccountRequestModal() {
+            document.getElementById('accountRequestForm').reset();
+            hideAlert('accountRequestError');
+            hideAlert('accountRequestSuccess');
+            document.getElementById('accountRequestModal').classList.add('show');
+            
+            // 첫 번째 입력 필드에 포커스
+            setTimeout(() => {
+                document.getElementById('requestName').focus();
+            }, 100);
+        }
+
+        // 계정 신청 모달 닫기
+        function closeAccountRequestModal() {
+            closeModal('accountRequestModal');
+        }
+
+        // 계정 신청서 제출 (스프레드시트에 저장)
+        async function submitAccountRequest() {
+            const formData = {
+                name: document.getElementById('requestName').value.trim(),
+                email: document.getElementById('requestEmail').value.trim(),
+                phone: document.getElementById('requestPhone').value.trim(),
+                department: document.getElementById('requestDepartment').value.trim(),
+                position: document.getElementById('requestPosition').value.trim(),
+                role: document.getElementById('requestRole').value,
+                reason: document.getElementById('requestReason').value.trim(),
+                userId: document.getElementById('requestUserId').value.trim()
+            };
+
+            // 유효성 검사
+            if (!formData.name || !formData.email || !formData.phone || 
+                !formData.department || !formData.role || !formData.reason) {
+                showAlert('accountRequestError', '필수 항목(*)을 모두 입력해주세요.', 'error');
+                return;
+            }
+
+            if (!Utils.isValidEmail(formData.email)) {
+                showAlert('accountRequestError', '올바른 이메일 주소를 입력해주세요.', 'error');
+                return;
+            }
+
+            // 전화번호 형식 간단 체크
+            const phoneRegex = /^[\d\-\+\(\)\s]{10,}$/;
+            if (!phoneRegex.test(formData.phone)) {
+                showAlert('accountRequestError', '올바른 전화번호를 입력해주세요.', 'error');
+                return;
+            }
+
+            try {
+                // 버튼 상태 변경
+                const submitBtn = document.querySelector('#accountRequestModal .btn-primary');
+                const btnText = document.getElementById('accountRequestBtnText');
+                submitBtn.disabled = true;
+                btnText.textContent = '📧 제출 중...';
+
+                // 현재 날짜/시간 추가
+                formData.requestDate = new Date().toLocaleString('ko-KR');
+                
+                // Apps Script를 통한 스프레드시트 저장
+                const result = await GoogleAppsScriptAPI.submitAccountRequest(formData);
+
+                if (result.success) {
+                    showAlert('accountRequestSuccess', 
+                        '✅ 계정 신청이 완료되었습니다!\n관리자 검토 후 승인됩니다.', 'success');
+                    
+                    // 3초 후 모달 닫기
+                    setTimeout(() => {
+                        closeAccountRequestModal();
+                    }, 3000);
+                } else {
+                    throw new Error(result.error || '신청서 제출에 실패했습니다.');
+                }
+
+            } catch (error) {
+                Utils.debugLog('계정 신청 오류:', error);
+                showAlert('accountRequestError', `제출 실패: ${error.message}`, 'error');
+
+            } finally {
+                // 버튼 복원
+                const submitBtn = document.querySelector('#accountRequestModal .btn-primary');
+                const btnText = document.getElementById('accountRequestBtnText');
+                submitBtn.disabled = false;
+                btnText.textContent = '📧 신청서 제출';
+            }
+        }
     </script>
 </body>
 </html>
