@@ -379,7 +379,7 @@
                     </div>
                 </div>
 
-                <div class="form-group">
+                <div class="form-group full-width">
                     <label for="processNote">처리 메모</label>
                     <textarea id="processNote" rows="3" placeholder="처리 내용이나 특이사항을 입력하세요 (선택사항)"></textarea>
                 </div>
@@ -1152,6 +1152,11 @@
                     }
                 }
                 
+                // 행에 데이터 속성 추가 (전화번호와 시간으로 식별)
+                row.setAttribute('data-phone', call.phoneNumber);
+                row.setAttribute('data-start-time', call.startTime);
+                row.setAttribute('data-table-index', index);
+                
                 row.innerHTML = `
                     <td>${Utils.formatDateOnly(call.date)}</td>
                     <td class="time-display">${Utils.formatTimeOnly(call.startTime)}</td>
@@ -1166,7 +1171,7 @@
                     </td>
                     <td>${call.processManager || '-'}</td>
                     <td>
-                        <button class="btn btn-primary btn-small" onclick="openProcessModal(${currentCallsData.findIndex(c => c.phoneNumber === call.phoneNumber && c.startTime === call.startTime)})">
+                        <button class="btn btn-primary btn-small" onclick="openProcessModal(${index})">
                             ${actionText}
                         </button>
                     </td>
@@ -1350,11 +1355,25 @@
         }
 
         // OB콜 처리 모달 열기
-        function openProcessModal(index) {
-            const call = currentCallsData[index];
-            currentProcessingCall = { ...call, index };
+        function openProcessModal(tableIndex) {
+            // 현재 표시된 데이터에서 해당 인덱스의 콜 가져오기
+            const sortedData = getCurrentSortedData();
+            const call = sortedData[tableIndex];
+            
+            if (!call) {
+                Utils.debugLog('콜 데이터를 찾을 수 없습니다:', tableIndex);
+                return;
+            }
+            
+            currentProcessingCall = { 
+                ...call, 
+                tableIndex: tableIndex,  // 테이블에서의 위치
+                originalIndex: currentCallsData.findIndex(c => 
+                    c.phoneNumber === call.phoneNumber && c.startTime === call.startTime
+                )  // 원본 데이터에서의 위치
+            };
 
-            Utils.debugLog('선택된 콜 데이터:', call);
+            Utils.debugLog('선택된 콜 데이터:', currentProcessingCall);
 
             document.getElementById('modalPhoneNumber').textContent = call.phoneNumber;
             document.getElementById('modalCallInfo').textContent = 
@@ -1375,6 +1394,29 @@
                     document.getElementById('processManager').focus();
                 }
             }, 100);
+        }
+
+        // 현재 정렬된 데이터 가져오기
+        function getCurrentSortedData() {
+            const tableBody = document.querySelector('#callsTable tbody');
+            const rows = tableBody.querySelectorAll('tr');
+            const sortedData = [];
+            
+            rows.forEach(row => {
+                const phoneNumber = row.getAttribute('data-phone');
+                const startTime = row.getAttribute('data-start-time');
+                
+                // 현재 데이터에서 해당 콜 찾기
+                const call = currentCallsData.find(c => 
+                    c.phoneNumber === phoneNumber && c.startTime === startTime
+                );
+                
+                if (call) {
+                    sortedData.push(call);
+                }
+            });
+            
+            return sortedData;
         }
 
         // OB콜 처리 모달 닫기
