@@ -863,41 +863,41 @@
         }
 
         // 계정 신청 목록 결과 표시
-        function displayRequestsResults(requests) {
-            const tbody = document.querySelector('#requestsTable tbody');
-            const noRequestsMsg = document.getElementById('noRequestsMessage');
-            
-            tbody.innerHTML = '';
+function displayRequestsResults(requests) {
+    const tbody = document.querySelector('#requestsTable tbody');
+    const noRequestsMsg = document.getElementById('noRequestsMessage');
+    
+    tbody.innerHTML = '';
 
-            if (requests.length === 0) {
-                showElement('noRequestsMessage');
-                return;
-            }
+    if (requests.length === 0) {
+        showElement('noRequestsMessage');
+        return;
+    }
 
-            hideElement('noRequestsMessage');
+    hideElement('noRequestsMessage');
 
-            requests.forEach((request, index) => {
-                const row = tbody.insertRow();
-                row.innerHTML = `
-                    <td class="time-display">${request.requestDate}</td>
-                    <td>${request.name}</td>
-                    <td>${request.email}</td>
-                    <td>${request.phone}</td>
-                    <td>${request.department}</td>
-                    <td><span class="status-badge status-${request.role}">${getRoleDisplayName(request.role)}</span></td>
-                    <td class="phone-number">${request.requestedUsername || '자동 생성'}</td>
-                    <td><span class="status-badge status-pending">⏳ 대기중</span></td>
-                    <td style="white-space: nowrap;">
-                        <button class="btn btn-success btn-small" onclick="openApprovalModal(${index})" style="margin-right: 5px;">
-                            ✅ 승인
-                        </button>
-                        <button class="btn btn-danger btn-small" onclick="rejectRequest(${index})">
-                            ❌ 거부
-                        </button>
-                    </td>
-                `;
-            });
-        }
+    requests.forEach((request, index) => {
+        const row = tbody.insertRow();
+        row.innerHTML = `
+            <td class="time-display">${Utils.formatKoreanDateTime(request.requestDate)}</td>
+            <td>${request.name}</td>
+            <td>${request.email}</td>
+            <td>${request.phone}</td>
+            <td>${request.department}</td>
+            <td><span class="status-badge status-${request.role}">${getRoleDisplayName(request.role)}</span></td>
+            <td class="phone-number">${request.requestedUsername || '자동 생성'}</td>
+            <td><span class="status-badge status-pending">⏳ 대기중</span></td>
+            <td style="white-space: nowrap;">
+                <button class="btn btn-success btn-small" onclick="openApprovalModal(${index})" style="margin-right: 5px;">
+                    ✅ 승인
+                </button>
+                <button class="btn btn-danger btn-small" onclick="rejectRequest(${index})">
+                    ❌ 거부
+                </button>
+            </td>
+        `;
+    });
+}
 
         // 계정 신청 승인 모달 열기
         function openApprovalModal(index) {
@@ -1012,42 +1012,42 @@
 
         // 사용자 목록 결과 표시
         function displayUsersResults(users) {
-            const tbody = document.querySelector('#usersTable tbody');
-            tbody.innerHTML = '';
+    const tbody = document.querySelector('#usersTable tbody');
+    tbody.innerHTML = '';
 
-            if (users.length === 0) {
-                const row = tbody.insertRow();
-                row.innerHTML = `
-                    <td colspan="8" class="text-center" style="padding: 40px; color: #666;">
-                        👥 등록된 사용자가 없습니다.
-                    </td>
-                `;
-                return;
-            }
+    if (users.length === 0) {
+        const row = tbody.insertRow();
+        row.innerHTML = `
+            <td colspan="8" class="text-center" style="padding: 40px; color: #666;">
+                👥 등록된 사용자가 없습니다.
+            </td>
+        `;
+        return;
+    }
 
-            users.forEach((user, index) => {
-                const row = tbody.insertRow();
-                const statusClass = user.status === 'approved' ? 'status-processed' : 'status-pending';
-                const statusText = user.status === 'approved' ? '✅ 활성' : '⏳ 대기중';
-                
-                row.innerHTML = `
-                    <td class="phone-number">${user.username}</td>
-                    <td>${user.name}</td>
-                    <td>${user.email}</td>
-                    <td><span class="status-badge status-${user.role}">${getRoleDisplayName(user.role)}</span></td>
-                    <td><span class="status-badge ${statusClass}">${statusText}</span></td>
-                    <td class="time-display">${user.createdAt || '-'}</td>
-                    <td class="time-display">${user.lastLogin || '-'}</td>
-                    <td style="white-space: nowrap;">
-                        <button class="btn btn-primary btn-small" onclick="editUser(${index})" style="margin-right: 5px;">✏️ 수정</button>
-                        ${user.username !== currentUser.username ? 
-                            `<button class="btn btn-danger btn-small" onclick="deleteUser(${index})">🗑️ 삭제</button>` : 
-                            '<span class="text-small">현재 사용자</span>'
-                        }
-                    </td>
-                `;
-            });
-        }
+    users.forEach((user, index) => {
+        const row = tbody.insertRow();
+        const statusClass = user.status === 'approved' ? 'status-processed' : 'status-pending';
+        const statusText = user.status === 'approved' ? '✅ 활성' : '⏳ 대기중';
+        
+        row.innerHTML = `
+            <td class="phone-number">${user.username}</td>
+            <td>${user.name}</td>
+            <td>${user.email}</td>
+            <td><span class="status-badge status-${user.role}">${getRoleDisplayName(user.role)}</span></td>
+            <td><span class="status-badge ${statusClass}">${statusText}</span></td>
+            <td class="time-display">${Utils.formatDateOnly(user.createdAt) || '-'}</td>
+            <td class="time-display">${Utils.formatKoreanDateTime(user.lastLogin) || '-'}</td>
+            <td style="white-space: nowrap;">
+                <button class="btn btn-primary btn-small" onclick="editUser(${index})" style="margin-right: 5px;">✏️ 수정</button>
+                ${user.username !== currentUser.username ? 
+                    `<button class="btn btn-danger btn-small" onclick="deleteUser(${index})">🗑️ 삭제</button>` : 
+                    '<span class="text-small">현재 사용자</span>'
+                }
+            </td>
+        `;
+    });
+}
 
         // 권한 표시명 반환
         function getRoleDisplayName(role) {
@@ -1361,80 +1361,80 @@
         }
 
         // 콜 데이터 결과 표시
-        function displayCallsResults(data) {
-            const countDiv = document.getElementById('resultsCount');
-            const tbody = document.querySelector('#callsTable tbody');
-            const processFilter = document.getElementById('processFilter').value;
-            
-            // 필터 상태에 따른 제목 변경
-            let filterText = '';
-            if (processFilter === 'processed') {
-                filterText = ' (처리 완료만)';
-            } else if (processFilter === 'pending') {
-                filterText = ' (미처리만)';
-            }
+function displayCallsResults(data) {
+    const countDiv = document.getElementById('resultsCount');
+    const tbody = document.querySelector('#callsTable tbody');
+    const processFilter = document.getElementById('processFilter').value;
+    
+    // 필터 상태에 따른 제목 변경
+    let filterText = '';
+    if (processFilter === 'processed') {
+        filterText = ' (처리 완료만)';
+    } else if (processFilter === 'pending') {
+        filterText = ' (미처리만)';
+    }
 
-            countDiv.textContent = `📊 조회 결과: ${data.length}건${filterText}`;
-            tbody.innerHTML = '';
+    countDiv.textContent = `📊 조회 결과: ${data.length}건${filterText}`;
+    tbody.innerHTML = '';
 
-            data.forEach((call, index) => {
-                const row = tbody.insertRow();
-                const waitMinutes = Math.round(call.duration / 60);
-                
-                row.innerHTML = `
-                    <td>${call.date}</td>
-                    <td class="time-display">${call.startTime}</td>
-                    <td class="time-display">${waitMinutes}분</td>
-                    <td class="phone-number">${call.phoneNumber}</td>
-                    <td>${call.queue}</td>
-                    <td><span class="call-count">${call.callCount}번</span></td>
-                    <td>
-                        <span class="status-badge ${call.processStatus ? 'status-processed' : 'status-pending'}">
-                            ${call.processStatus ? '✅ 처리완료' : '⏳ 미처리'}
-                        </span>
-                    </td>
-                    <td>${call.processManager || '-'}</td>
-                    <td>
-                        <button class="btn btn-primary btn-small" onclick="openProcessModal(${index})">
-                            ${call.processStatus ? '✏️ 수정' : '📞 처리'}
-                        </button>
-                    </td>
-                `;
-            });
-        }
+    data.forEach((call, index) => {
+        const row = tbody.insertRow();
+        const waitMinutes = Math.round(call.duration / 60);
+        
+        row.innerHTML = `
+            <td>${Utils.formatDateOnly(call.date)}</td>
+            <td class="time-display">${Utils.formatTimeOnly(call.startTime)}</td>
+            <td class="time-display">${waitMinutes}분</td>
+            <td class="phone-number">${call.phoneNumber}</td>
+            <td>${call.queue}</td>
+            <td><span class="call-count">${call.callCount}번</span></td>
+            <td>
+                <span class="status-badge ${call.processStatus ? 'status-processed' : 'status-pending'}">
+                    ${call.processStatus ? '✅ 처리완료' : '⏳ 미처리'}
+                </span>
+            </td>
+            <td>${call.processManager || '-'}</td>
+            <td>
+                <button class="btn btn-primary btn-small" onclick="openProcessModal(${index})">
+                    ${call.processStatus ? '✏️ 수정' : '📞 처리'}
+                </button>
+            </td>
+        `;
+    });
+}
 
         // CSV 내보내기
-        function exportToCSV() {
-            if (currentCallsData.length === 0) {
-                alert('📭 내보낼 데이터가 없습니다.');
-                return;
-            }
+function exportToCSV() {
+    if (currentCallsData.length === 0) {
+        alert('📭 내보낼 데이터가 없습니다.');
+        return;
+    }
 
-            const headers = ['발생일', '인입시간', '대기시간(분)', '전화번호', '인입큐', '중복횟수', '처리상태', '처리담당자'];
-            const csvContent = [
-                headers.join(','),
-                ...currentCallsData.map(call => [
-                    call.date,
-                    call.startTime,
-                    Math.round(call.duration / 60),
-                    call.phoneNumber,
-                    `"${call.queue}"`,
-                    call.callCount,
-                    call.processStatus || '미처리',
-                    call.processManager || ''
-                ].join(','))
-            ].join('\n');
+    const headers = ['발생일', '인입시간', '대기시간(분)', '전화번호', '인입큐', '중복횟수', '처리상태', '처리담당자'];
+    const csvContent = [
+        headers.join(','),
+        ...currentCallsData.map(call => [
+            Utils.formatDateOnly(call.date),
+            Utils.formatTimeOnly(call.startTime),
+            Math.round(call.duration / 60),
+            call.phoneNumber,
+            `"${call.queue}"`,
+            call.callCount,
+            call.processStatus || '미처리',
+            call.processManager || ''
+        ].join(','))
+    ].join('\n');
 
-            const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
-            const link = document.createElement('a');
-            const url = URL.createObjectURL(blob);
-            link.setAttribute('href', url);
-            link.setAttribute('download', `missing_calls_${document.getElementById('searchDate').value}.csv`);
-            link.style.visibility = 'hidden';
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-        }
+    const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', `missing_calls_${document.getElementById('searchDate').value}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
 
         // OB콜 처리 모달 열기
         function openProcessModal(index) {
