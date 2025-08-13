@@ -145,6 +145,7 @@
                             <table id="callsTable">
                                 <thead>
                                     <tr>
+                                        <th>순번</th>
                                         <th>발생일</th>
                                         <th class="sortable-header" onclick="sortTable('startTime')" title="클릭하여 정렬">
                                             인입시간
@@ -344,7 +345,7 @@
         </div>
     </div>
 
-    <!-- OB콜 처리 모달 - UI 개선 버전 -->
+    <!-- ⭐ OB콜 처리 모달 - UI 개선 완료 버전 -->
     <div id="processModal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
@@ -361,9 +362,9 @@
             </div>
             
             <form id="processForm">
-                <!-- 처리 상태와 담당자를 같은 행에 배치 -->
-                <div class="form-row">
-                    <div class="form-group flex-half">
+                <!-- ⭐ 처리 상태와 담당자를 같은 행에 배치 (좌우 50:50) -->
+                <div class="form-row-horizontal">
+                    <div class="form-group form-group-half">
                         <label for="processStatus">처리 상태 *</label>
                         <select id="processStatus" required>
                             <option value="">선택해주세요</option>
@@ -374,16 +375,16 @@
                         </select>
                     </div>
                     
-                    <div class="form-group flex-half">
+                    <div class="form-group form-group-half">
                         <label for="processManager">담당자 *</label>
                         <input type="text" id="processManager" required placeholder="담당자명을 입력하세요" autocomplete="name">
                     </div>
                 </div>
 
-                <!-- 처리 메모는 전체 너비로 -->
-                <div class="form-group full-width">
+                <!-- ⭐ 처리 메모는 전체 너비로 확장 -->
+                <div class="form-group form-group-full">
                     <label for="processNote">처리 메모</label>
-                    <textarea id="processNote" rows="3" placeholder="처리 내용이나 특이사항을 입력하세요 (선택사항)"></textarea>
+                    <textarea id="processNote" rows="4" placeholder="처리 내용이나 특이사항을 입력하세요 (선택사항)"></textarea>
                 </div>
             </form>
 
@@ -1102,7 +1103,7 @@
             displayCallsResultsWithData(sortedData);
         }
 
-        // 콜 데이터 결과 표시 (데이터 전달받는 버전)
+        // ⭐ 콜 데이터 결과 표시 (순번 추가된 버전)
         function displayCallsResultsWithData(data) {
             const countDiv = document.getElementById('resultsCount');
             const tbody = document.querySelector('#callsTable tbody');
@@ -1165,7 +1166,9 @@
                 row.callData = call;
                 row.setAttribute('data-table-index', index);
                 
+                // ⭐ 순번 칼럼 추가
                 row.innerHTML = `
+                    <td class="sequence-number">${index + 1}</td>
                     <td>${Utils.formatDateOnly(call.date)}</td>
                     <td class="time-display">${Utils.formatTimeOnly(call.startTime)}</td>
                     <td class="time-display">${waitMinutes}분</td>
@@ -1187,17 +1190,18 @@
             });
         }
 
-        // CSV 내보내기
+        // ⭐ CSV 내보내기 (순번 추가)
         function exportToCSV() {
             if (currentCallsData.length === 0) {
                 alert('📭 내보낼 데이터가 없습니다.');
                 return;
             }
 
-            const headers = ['발생일', '인입시간', '대기시간(분)', '전화번호', '인입큐', '중복횟수', '처리상태', '처리담당자'];
+            const headers = ['순번', '발생일', '인입시간', '대기시간(분)', '전화번호', '인입큐', '중복횟수', '처리상태', '처리담당자'];
             const csvContent = [
                 headers.join(','),
-                ...currentCallsData.map(call => [
+                ...currentCallsData.map((call, index) => [
+                    index + 1,
                     Utils.formatDateOnly(call.date),
                     Utils.formatTimeOnly(call.startTime),
                     Math.round(call.duration / 60),
@@ -1362,7 +1366,7 @@
             return roleNames[role] || role;
         }
 
-        // OB콜 처리 모달 열기 (완전히 새로운 안전한 버전)
+        // OB콜 처리 모달 열기 (순번 고려한 안전한 버전)
         function openProcessModal(tableIndex) {
             Utils.debugLog('=== openProcessModal 시작 ===');
             Utils.debugLog('요청된 테이블 인덱스:', tableIndex);
@@ -1391,14 +1395,14 @@
                     }
                 }
                 
-                // 방법 3: currentCallsData에서 검색 (마지막 수단)
+                // 방법 3: currentCallsData에서 검색 (순번 칼럼 고려)
                 Utils.debugLog('방법 3 시도 - currentCallsData 검색');
                 Utils.debugLog('currentCallsData 길이:', currentCallsData ? currentCallsData.length : 'null/undefined');
                 
                 if (currentCallsData && currentCallsData.length > 0) {
-                    // 테이블에서 전화번호 추출
-                    const phoneCell = rows[tableIndex]?.querySelector('.phone-number');
-                    const timeCell = rows[tableIndex]?.querySelector('.time-display');
+                    // 테이블에서 전화번호 추출 (순번 추가로 인해 인덱스 조정)
+                    const phoneCell = rows[tableIndex]?.querySelectorAll('td')[4]; // 전화번호는 5번째 칼럼
+                    const timeCell = rows[tableIndex]?.querySelectorAll('td')[2];  // 인입시간은 3번째 칼럼
                     
                     if (phoneCell && timeCell) {
                         const phoneNumber = phoneCell.textContent.trim();
@@ -1584,7 +1588,7 @@
             }
         }
 
-        // ⭐ 수정: 오류 함수 이름 변경
+        // 처리 후 다음 미처리 건으로 이동
         async function saveAndNext() {
             const processStatus = document.getElementById('processStatus').value;
             const processManager = document.getElementById('processManager').value.trim();
@@ -1603,7 +1607,7 @@
                 saveBtn.textContent = '⏳ 저장 중...';
 
                 // 현재 콜 처리
-                const currentIndex = currentProcessingCall.tableIndex; // ⭐ index → tableIndex로 수정
+                const currentIndex = currentProcessingCall.tableIndex;
                 const callsToUpdate = currentProcessingCall.groupCalls || [currentProcessingCall];
 
                 for (const call of callsToUpdate) {
@@ -1628,10 +1632,10 @@
                     }
                 }
 
-                // ⭐ 수정: 함수 이름 변경 updateProcessedCallInTable → updateTableRow
+                // 테이블 행 업데이트
                 updateTableRow(currentIndex, processStatus, processManager);
 
-                // 다음 미처리 건 찾기 (currentCallsData에서)
+                // 다음 미처리 건 찾기 (currentTableData에서)
                 let nextIndex = -1;
                 if (window.currentTableData && window.currentTableData.length > 0) {
                     for (let i = currentIndex + 1; i < window.currentTableData.length; i++) {
@@ -1690,7 +1694,7 @@
             }
         }
 
-        // 테이블 특정 행 업데이트 (즉시 반영)
+        // ⭐ 테이블 특정 행 업데이트 (순번 칼럼 고려)
         function updateTableRow(tableIndex, processStatus, processManager) {
             try {
                 const tableBody = document.querySelector('#callsTable tbody');
@@ -1731,23 +1735,24 @@
                         }
                     }
                     
-                    // 처리상태 칼럼 업데이트 (7번째 칼럼, 인덱스 6)
-                    if (cells[6]) {
-                        cells[6].innerHTML = `
+                    // ⭐ 순번 칼럼 추가로 인한 인덱스 조정
+                    // 처리상태 칼럼 업데이트 (8번째 칼럼, 인덱스 7)
+                    if (cells[7]) {
+                        cells[7].innerHTML = `
                             <span class="status-badge ${statusClass}">
                                 ${statusText}
                             </span>
                         `;
                     }
                     
-                    // 처리담당자 칼럼 업데이트 (8번째 칼럼, 인덱스 7)
-                    if (cells[7]) {
-                        cells[7].textContent = processManager;
+                    // 처리담당자 칼럼 업데이트 (9번째 칼럼, 인덱스 8)
+                    if (cells[8]) {
+                        cells[8].textContent = processManager;
                     }
                     
-                    // 액션 버튼 업데이트 (9번째 칼럼, 인덱스 8)
-                    if (cells[8]) {
-                        cells[8].innerHTML = `
+                    // 액션 버튼 업데이트 (10번째 칼럼, 인덱스 9)
+                    if (cells[9]) {
+                        cells[9].innerHTML = `
                             <button class="btn btn-primary btn-small" onclick="openProcessModal(${tableIndex})">
                                 ${actionText}
                             </button>
