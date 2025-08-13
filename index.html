@@ -36,13 +36,13 @@
             <form id="loginForm">
                 <div class="form-group">
                     <label for="loginUsername">사용자 ID</label>
-                    <input type="text" id="loginUsername" required autocomplete="username" placeholder="사용자 ID를 입력하세요">
+                    <input type="text" id="loginUsername" required autocomplete="username" placeholder="사용자 ID를 입력하세요" style="width: 100%; min-width: 250px;">
                 </div>
                 
                 <div class="form-group">
                     <label for="loginPassword">비밀번호</label>
                     <div class="password-container">
-                        <input type="password" id="loginPassword" required autocomplete="current-password" placeholder="비밀번호를 입력하세요">
+                        <input type="password" id="loginPassword" required autocomplete="current-password" placeholder="비밀번호를 입력하세요" style="width: 100%; min-width: 250px;">
                         <button type="button" class="password-toggle" onclick="togglePassword('loginPassword')">👁️</button>
                     </div>
                 </div>
@@ -135,6 +135,9 @@
         <div class="content-wrapper">
             <!-- 대시보드 섹션 -->
             <div id="dashboardSection" class="section active">
+                <div id="loadingMessage" class="loading hidden">
+                    데이터를 조회하고 있습니다<span class="spinner"></span>
+                </div>
                 <div id="loadingMessage" class="loading hidden">
                     데이터를 조회하고 있습니다<span class="spinner"></span>
                 </div>
@@ -463,9 +466,9 @@
                 </div>
                 
                 <div class="form-group">
-                    <label for="requestUserId">희망 사용자 ID</label>
-                    <input type="text" id="requestUserId" placeholder="영문/숫자 조합 (비워두면 자동 생성)">
-                    <small class="text-small">비워두시면 관리자가 적절한 ID로 생성해 드립니다.</small>
+                    <label for="requestUserId">희망 사용자 ID (사번)</label>
+                    <input type="text" id="requestUserId" placeholder="사번을 입력하세요 (예: T2025001)">
+                    <small class="text-small">본인의 사번을 입력해주세요. 비워두시면 관리자가 사번으로 생성해 드립니다.</small>
                 </div>
             </form>
 
