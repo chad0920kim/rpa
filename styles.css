@@ -178,6 +178,51 @@ body {
 }
 
 /* ⭐ 새로운 스타일: 모달 폼 레이아웃 개선 */
+.form-row-horizontal {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 15px;
+}
+
+.form-group.form-group-half {
+    flex: 1;
+    margin-bottom: 0;
+}
+
+.form-group.form-group-full {
+    width: 100%;
+    margin-bottom: 15px;
+}
+
+.form-group.form-group-full textarea {
+    width: 100%;
+    min-height: 90px;
+    resize: vertical;
+    font-family: inherit;
+    line-height: 1.5;
+}
+
+/* 순번 칼럼 스타일 */
+.sequence-number {
+    text-align: center;
+    font-weight: 600;
+    color: #6b7280;
+    font-size: 0.75rem;
+    background-color: #f9fafb;
+    width: 50px;
+    min-width: 50px;
+    max-width: 50px;
+}
+
+/* 순번 헤더 스타일 */
+table th:first-child {
+    width: 50px;
+    min-width: 50px;
+    max-width: 50px;
+    text-align: center;
+}
+
+/* 기존 form-row 관련 스타일 제거 및 수정 */
 .form-row {
     display: flex;
     gap: 15px;
@@ -816,14 +861,20 @@ td {
     }
 
     /* ⭐ 모바일에서 폼 행 세로 배치 */
-    .form-row {
+    .form-row, .form-row-horizontal {
         flex-direction: column;
         gap: 10px;
     }
 
-    .form-group.flex-half {
+    .form-group.flex-half, .form-group.form-group-half {
         flex: none;
         margin-bottom: 10px;
+    }
+
+    .sequence-number {
+        width: 35px;
+        min-width: 35px;
+        font-size: 0.7rem;
     }
 }
 
