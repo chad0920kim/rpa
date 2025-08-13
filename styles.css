@@ -1,4 +1,4 @@
-/* styles.css - 투어비스 Missing Call 시스템 최적화 스타일 (UI 개선 버전) */
+/* styles.css - 투어비스 Missing Call 시스템 최적화 스타일 (헤더 고정 개선 버전) */
 
 /* 기본 리셋 및 레이아웃 */
 * {
@@ -114,7 +114,7 @@ body {
 .content-wrapper {
     margin-top: 160px; /* 헤더 + 네비 + 검색 영역 높이 */
     height: calc(100vh - 160px);
-    overflow: visible; /* hidden에서 visible로 변경 */
+    overflow: visible;
 }
 
 .section {
@@ -280,14 +280,14 @@ table th:first-child {
     width: auto;
 }
 
-/* 결과 영역 - 스크롤 가능 */
+/* ⭐ 결과 영역 - 스크롤 가능 (헤더 고정을 위한 개선) */
 .results-container {
     flex: 1;
     overflow: hidden;
     display: flex;
     flex-direction: column;
     background: white;
-    min-height: 0; /* 플렉스 아이템이 축소될 수 있도록 */
+    min-height: 0;
     position: relative;
 }
 
@@ -309,29 +309,43 @@ table th:first-child {
     font-size: 0.95rem;
 }
 
+/* ⭐ 스크롤 컨테이너 구조 개선 */
 .results-content {
     flex: 1;
     overflow-y: auto;
     overflow-x: hidden;
     background: white;
     position: relative;
-    min-height: 0; /* 플렉스 아이템이 축소될 수 있도록 */
-    scroll-behavior: smooth; /* 부드러운 스크롤 */
+    min-height: 0;
+    scroll-behavior: smooth;
+    height: 100%;
 }
 
-/* 테이블 최적화 */
-.table-container {
+/* ⭐ 테이블 스크롤 래퍼 추가 */
+.table-scroll-wrapper {
     overflow-x: auto;
+    overflow-y: visible;
+    width: 100%;
+    height: 100%;
+    position: relative;
+}
+
+/* ⭐ 테이블 컨테이너 최적화 */
+.table-container {
     position: relative;
     background: white;
+    width: 100%;
+    min-height: 100%;
 }
 
+/* ⭐ 테이블 헤더 고정 강화 */
 table {
     width: 100%;
     border-collapse: collapse;
     font-size: 0.8rem;
     background: white;
     position: relative;
+    min-width: 100%;
 }
 
 th, td {
@@ -341,21 +355,29 @@ th, td {
     white-space: nowrap;
 }
 
+/* ⭐ 헤더 고정 스타일 강화 */
 th {
-    background: #f8f9fa;
+    background: #f8f9fa !important;
     font-weight: 600;
     color: #333;
     font-size: 0.75rem;
     text-transform: uppercase;
     letter-spacing: 0.3px;
-    position: sticky;
-    top: 0;
-    z-index: 100; /* z-index를 더 높게 설정 */
+    /* 고정 헤더 핵심 스타일 */
+    position: sticky !important;
+    top: 0 !important;
+    z-index: 200 !important;
     border-bottom: 2px solid #e5e7eb;
+    /* 헤더와 내용 구분을 위한 그림자 */
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    /* 브라우저 호환성을 위한 추가 스타일 */
+    -webkit-position: sticky;
+    -webkit-top: 0;
 }
 
 td {
     color: #555;
+    background: white;
 }
 
 /* 정렬 가능한 헤더 */
@@ -367,7 +389,7 @@ td {
 }
 
 .sortable-header:hover {
-    background-color: rgba(59, 130, 246, 0.1);
+    background-color: rgba(59, 130, 246, 0.1) !important;
 }
 
 .sort-arrow {
@@ -826,7 +848,7 @@ td {
     color: #ef4444;
 }
 
-/* 반응형 디자인 */
+/* ⭐ 반응형 디자인 (모바일 대응 포함) */
 @media (max-width: 768px) {
     .header {
         padding: 6px 15px;
@@ -859,7 +881,24 @@ td {
     .content-wrapper {
         margin-top: 180px;
         height: calc(100vh - 180px);
-        overflow: visible; /* hidden에서 visible로 변경 */
+        overflow: visible;
+    }
+
+    /* ⭐ 모바일에서 테이블 헤더 고정 유지 */
+    .table-container {
+        overflow-x: auto;
+    }
+    
+    table {
+        min-width: 800px;
+    }
+    
+    th {
+        position: sticky !important;
+        top: 0 !important;
+        z-index: 200 !important;
+        background: #f8f9fa !important;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     }
 
     th, td {
@@ -927,7 +966,7 @@ td {
     .content-wrapper {
         margin-top: 200px;
         height: calc(100vh - 200px);
-        overflow: visible; /* hidden에서 visible로 변경 */
+        overflow: visible;
     }
 
     .section-header {
