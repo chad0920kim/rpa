@@ -348,33 +348,40 @@
     <div id="processModal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
-                <h3>📞 OB콜 처리</h3>
-                <p style="color: #666; margin: 5px 0 0 0;">
-                    전화번호: <span id="modalPhoneNumber" class="phone-number"></span><br>
-                    <span id="modalCallInfo" style="font-size: 0.9rem;"></span>
-                </p>
+                <h3>📞 Missing Call 처리</h3>
+                <div class="call-info-card">
+                    <div class="call-info-row">
+                        <span class="info-label">전화번호:</span>
+                        <span id="modalPhoneNumber" class="phone-number"></span>
+                    </div>
+                    <div class="call-info-row">
+                        <span id="modalCallInfo" class="info-details"></span>
+                    </div>
+                </div>
             </div>
             
             <form id="processForm">
-                <div class="form-group">
-                    <label for="processStatus">처리 여부 *</label>
-                    <select id="processStatus" required>
-                        <option value="">선택해주세요</option>
-                        <option value="완료">✅ 완료</option>
-                        <option value="미완료">❌ 미완료</option>
-                        <option value="보류">⏸️ 보류</option>
-                        <option value="재시도">🔄 재시도 필요</option>
-                    </select>
-                </div>
-                
-                <div class="form-group">
-                    <label for="processManager">처리담당자 *</label>
-                    <input type="text" id="processManager" required placeholder="담당자명을 입력하세요" autocomplete="name">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="processStatus">처리 상태 *</label>
+                        <select id="processStatus" required>
+                            <option value="">선택해주세요</option>
+                            <option value="완료">✅ 완료</option>
+                            <option value="미완료">❌ 미완료</option>
+                            <option value="보류">⏸️ 보류</option>
+                            <option value="재시도">🔄 재시도 필요</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="processManager">담당자 *</label>
+                        <input type="text" id="processManager" required placeholder="담당자명을 입력하세요" autocomplete="name">
+                    </div>
                 </div>
 
                 <div class="form-group">
-                    <label for="processNote">처리 메모 (선택)</label>
-                    <textarea id="processNote" rows="3" placeholder="처리 내용이나 특이사항을 입력하세요"></textarea>
+                    <label for="processNote">처리 메모</label>
+                    <textarea id="processNote" rows="3" placeholder="처리 내용이나 특이사항을 입력하세요 (선택사항)"></textarea>
                 </div>
             </form>
 
@@ -383,10 +390,10 @@
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" onclick="closeProcessModal()">취소</button>
                 <button type="button" class="btn btn-success" onclick="saveProcess()">
-                    <span id="processSaveBtnText">💾 처리 완료</span>
+                    <span id="processSaveBtnText">💾 저장</span>
                 </button>
-                <button type="button" class="btn btn-primary" onclick="saveAndNext()" style="margin-left: 10px;" title="처리 후 다음 미처리 건으로 이동">
-                    ⏩ 처리 후 다음
+                <button type="button" class="btn btn-primary" onclick="saveAndNext()" title="저장 후 다음 미처리 건으로 이동">
+                    ⏩ 저장 후 다음
                 </button>
             </div>
         </div>
@@ -1114,6 +1121,37 @@
                 const row = tbody.insertRow();
                 const waitMinutes = Math.round(call.duration / 60);
                 
+                // 처리 상태에 따른 스타일과 텍스트 결정
+                let statusClass = 'status-pending';
+                let statusText = '⏳ 미처리';
+                let actionText = '📞 처리';
+                
+                if (call.processStatus && call.processStatus.trim() !== '') {
+                    actionText = '✏️ 수정';
+                    
+                    switch (call.processStatus.trim()) {
+                        case '완료':
+                            statusClass = 'status-processed';
+                            statusText = '✅ 완료';
+                            break;
+                        case '미완료':
+                            statusClass = 'status-rejected';
+                            statusText = '❌ 미완료';
+                            break;
+                        case '보류':
+                            statusClass = 'status-pending';
+                            statusText = '⏸️ 보류';
+                            break;
+                        case '재시도':
+                            statusClass = 'status-warning';
+                            statusText = '🔄 재시도';
+                            break;
+                        default:
+                            statusClass = 'status-processed';
+                            statusText = '✅ ' + call.processStatus;
+                    }
+                }
+                
                 row.innerHTML = `
                     <td>${Utils.formatDateOnly(call.date)}</td>
                     <td class="time-display">${Utils.formatTimeOnly(call.startTime)}</td>
@@ -1122,14 +1160,14 @@
                     <td>${call.queue}</td>
                     <td><span class="call-count">${call.callCount}번</span></td>
                     <td>
-                        <span class="status-badge ${call.processStatus ? 'status-processed' : 'status-pending'}">
-                            ${call.processStatus ? '✅ 처리완료' : '⏳ 미처리'}
+                        <span class="status-badge ${statusClass}">
+                            ${statusText}
                         </span>
                     </td>
                     <td>${call.processManager || '-'}</td>
                     <td>
                         <button class="btn btn-primary btn-small" onclick="openProcessModal(${currentCallsData.findIndex(c => c.phoneNumber === call.phoneNumber && c.startTime === call.startTime)})">
-                            ${call.processStatus ? '✏️ 수정' : '📞 처리'}
+                            ${actionText}
                         </button>
                     </td>
                 `;
@@ -1353,7 +1391,7 @@
             const processNote = document.getElementById('processNote').value.trim();
 
             if (!processStatus || !processManager) {
-                showAlert('processModalError', '처리 여부와 처리담당자를 모두 입력해주세요.', 'error');
+                showAlert('processModalError', '처리 상태와 담당자를 모두 입력해주세요.', 'error');
                 return;
             }
 
@@ -1401,17 +1439,17 @@
                 updateProcessedCallInTable(currentProcessingCall.index, processStatus, processManager);
                 
                 // 성공 메시지
-                Utils.showToast(`✅ ${currentProcessingCall.phoneNumber} 처리 완료 (${processStatus})`, 'success');
+                Utils.showToast(`✅ ${currentProcessingCall.phoneNumber} 저장 완료 (${processStatus})`, 'success');
 
             } catch (error) {
-                Utils.debugLog('처리 저장 오류:', error);
-                showAlert('processModalError', '처리 저장 중 오류가 발생했습니다: ' + error.message, 'error');
+                Utils.debugLog('저장 오류:', error);
+                showAlert('processModalError', '저장 중 오류가 발생했습니다: ' + error.message, 'error');
             } finally {
                 // 버튼 복원
                 const saveBtn = document.querySelector('#processModal .btn-success');
                 const btnText = document.getElementById('processSaveBtnText');
                 saveBtn.disabled = false;
-                btnText.textContent = '💾 처리 완료';
+                btnText.textContent = '💾 저장';
             }
         }
 
@@ -1421,7 +1459,7 @@
             const processManager = document.getElementById('processManager').value.trim();
 
             if (!processStatus || !processManager) {
-                showAlert('processModalError', '처리 여부와 처리담당자를 모두 입력해주세요.', 'error');
+                showAlert('processModalError', '처리 상태와 담당자를 모두 입력해주세요.', 'error');
                 return;
             }
 
@@ -1431,7 +1469,7 @@
                 const btnText = saveBtn.textContent;
                 
                 saveBtn.disabled = true;
-                saveBtn.textContent = '⏳ 처리 중...';
+                saveBtn.textContent = '⏳ 저장 중...';
 
                 // 현재 콜 처리
                 const currentIndex = currentProcessingCall.index;
@@ -1483,7 +1521,7 @@
 
                 if (nextIndex !== -1) {
                     // 다음 미처리 건으로 모달 전환
-                    Utils.showToast(`✅ ${currentProcessingCall.phoneNumber} 처리 완료`, 'success');
+                    Utils.showToast(`✅ ${currentProcessingCall.phoneNumber} 저장 완료`, 'success');
                     
                     // 잠시 대기 후 다음 건 열기
                     setTimeout(() => {
@@ -1504,18 +1542,18 @@
                 } else {
                     // 더 이상 미처리 건이 없음
                     closeProcessModal();
-                    Utils.showToast(`✅ ${currentProcessingCall.phoneNumber} 처리 완료 - 미처리 건이 더 없습니다`, 'success');
+                    Utils.showToast(`✅ ${currentProcessingCall.phoneNumber} 저장 완료 - 미처리 건이 더 없습니다`, 'success');
                     alert('🎉 모든 건이 처리되었습니다!');
                 }
 
             } catch (error) {
-                Utils.debugLog('처리 후 다음 오류:', error);
-                showAlert('processModalError', '처리 저장 중 오류가 발생했습니다: ' + error.message, 'error');
+                Utils.debugLog('저장 후 다음 오류:', error);
+                showAlert('processModalError', '저장 중 오류가 발생했습니다: ' + error.message, 'error');
             } finally {
                 // 버튼 복원
                 const saveBtn = document.querySelector('#processModal .btn-primary');
                 saveBtn.disabled = false;
-                saveBtn.textContent = '⏩ 처리 후 다음';
+                saveBtn.textContent = '⏩ 저장 후 다음';
             }
         }
 
@@ -1536,11 +1574,42 @@
                     const row = rows[callIndex];
                     const cells = row.querySelectorAll('td');
                     
+                    // 처리 상태에 따른 스타일과 텍스트 결정
+                    let statusClass = 'status-pending';
+                    let statusText = '⏳ 미처리';
+                    let actionText = '📞 처리';
+                    
+                    if (processStatus && processStatus.trim() !== '') {
+                        actionText = '✏️ 수정';
+                        
+                        switch (processStatus.trim()) {
+                            case '완료':
+                                statusClass = 'status-processed';
+                                statusText = '✅ 완료';
+                                break;
+                            case '미완료':
+                                statusClass = 'status-rejected';
+                                statusText = '❌ 미완료';
+                                break;
+                            case '보류':
+                                statusClass = 'status-pending';
+                                statusText = '⏸️ 보류';
+                                break;
+                            case '재시도':
+                                statusClass = 'status-warning';
+                                statusText = '🔄 재시도';
+                                break;
+                            default:
+                                statusClass = 'status-processed';
+                                statusText = '✅ ' + processStatus;
+                        }
+                    }
+                    
                     // 처리상태 칼럼 업데이트 (7번째 칼럼, 인덱스 6)
                     if (cells[6]) {
                         cells[6].innerHTML = `
-                            <span class="status-badge status-processed">
-                                ✅ 처리완료
+                            <span class="status-badge ${statusClass}">
+                                ${statusText}
                             </span>
                         `;
                     }
@@ -1554,7 +1623,7 @@
                     if (cells[8]) {
                         cells[8].innerHTML = `
                             <button class="btn btn-primary btn-small" onclick="openProcessModal(${callIndex})">
-                                ✏️ 수정
+                                ${actionText}
                             </button>
                         `;
                     }
