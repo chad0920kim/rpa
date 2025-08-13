@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>!투어비스 항공(국제선) Missing Call 처리 시스템</title>
+    <title>투어비스 항공(국제선) Missing Call 처리 시스템</title>
     <link rel="stylesheet" href="styles.css">
     <style>
         /* 정렬 가능한 헤더 스타일 */
@@ -519,7 +519,7 @@
             initializeApp();
         });
 
-        // 앱 초기화
+        // ⭐ 수정된 앱 초기화 (날짜 처리 개선)
         async function initializeApp() {
             Utils.debugLog('앱 초기화 시작');
             
@@ -563,8 +563,8 @@
                     showLoginScreen();
                 }
 
-                // 오늘 날짜로 설정
-                const today = new Date().toISOString().split('T')[0];
+                // ⭐ 수정: 오늘 날짜 설정 (UTC 변환 방지)
+                const today = Utils.getTodayString(); // Utils에서 안전한 날짜 문자열 가져오기
                 document.getElementById('searchDate').value = today;
                 
                 // 기본 필터 설정
@@ -582,7 +582,7 @@
             }
         }
 
-        // 테이블 정렬 함수
+        // ⭐ 수정된 테이블 정렬 함수 (안전한 시간 비교)
         function sortTable(column) {
             Utils.debugLog('정렬 요청:', { column, currentSort });
             
@@ -608,42 +608,25 @@
                     let valueA, valueB;
                     
                     if (column === 'startTime') {
-                        // 인입시간 정렬 - 더 안전한 방식으로 시간 비교
+                        // ⭐ 인입시간 정렬 - 안전한 문자열 비교
                         try {
-                            // 날짜와 시간을 조합하여 정렬 가능한 문자열 생성
-                            const dateA = a.date || '';
-                            const timeA = a.startTime || '';
-                            const dateB = b.date || '';
-                            const timeB = b.startTime || '';
+                            const dateA = Utils.formatDateOnly(a.date) || '';
+                            const timeA = Utils.formatTimeOnly(a.startTime) || '';
+                            const dateB = Utils.formatDateOnly(b.date) || '';
+                            const timeB = Utils.formatTimeOnly(b.startTime) || '';
                             
-                            // YYYY-MM-DD HH:MM:SS 형식으로 조합
-                            const dateTimeStrA = `${dateA} ${timeA}`;
-                            const dateTimeStrB = `${dateB} ${timeB}`;
+                            // YYYY-MM-DD HH:MM:SS 형식으로 조합하여 문자열 비교
+                            valueA = `${dateA} ${timeA}`;
+                            valueB = `${dateB} ${timeB}`;
                             
                             Utils.debugLog('시간 정렬 비교:', { 
-                                a: { date: dateA, time: timeA, combined: dateTimeStrA },
-                                b: { date: dateB, time: timeB, combined: dateTimeStrB }
+                                a: { date: dateA, time: timeA, combined: valueA },
+                                b: { date: dateB, time: timeB, combined: valueB }
                             });
-                            
-                            // 문자열 비교로 정렬 (ISO 형식이면 문자열 비교도 정확함)
-                            valueA = dateTimeStrA;
-                            valueB = dateTimeStrB;
-                            
-                            // 추가로 Date 객체로도 시도
-                            const parsedA = new Date(dateTimeStrA);
-                            const parsedB = new Date(dateTimeStrB);
-                            
-                            if (!isNaN(parsedA.getTime()) && !isNaN(parsedB.getTime())) {
-                                valueA = parsedA.getTime();
-                                valueB = parsedB.getTime();
-                                Utils.debugLog('Date 객체 파싱 성공:', { valueA, valueB });
-                            } else {
-                                Utils.debugLog('Date 객체 파싱 실패, 문자열 비교 사용');
-                            }
                             
                         } catch (error) {
                             Utils.debugLog('시간 정렬 오류:', error);
-                            // 오류 발생시 문자열 비교로 폴백
+                            // 오류 발생시 기본값
                             valueA = `${a.date} ${a.startTime}`;
                             valueB = `${b.date} ${b.startTime}`;
                         }
@@ -679,8 +662,9 @@
                 direction: currentSort.direction, 
                 dataLength: sortedData.length,
                 firstItem: sortedData[0] ? {
-                    date: sortedData[0].date,
-                    startTime: sortedData[0].startTime,
+                    phoneNumber: sortedData[0].phoneNumber,
+                    date: Utils.formatDateOnly(sortedData[0].date),
+                    startTime: Utils.formatTimeOnly(sortedData[0].startTime),
                     callCount: sortedData[0].callCount
                 } : null
             });
@@ -1044,41 +1028,41 @@
         }
 
         // 계정 신청 목록 결과 표시
-function displayRequestsResults(requests) {
-    const tbody = document.querySelector('#requestsTable tbody');
-    const noRequestsMsg = document.getElementById('noRequestsMessage');
-    
-    tbody.innerHTML = '';
+        function displayRequestsResults(requests) {
+            const tbody = document.querySelector('#requestsTable tbody');
+            const noRequestsMsg = document.getElementById('noRequestsMessage');
+            
+            tbody.innerHTML = '';
 
-    if (requests.length === 0) {
-        showElement('noRequestsMessage');
-        return;
-    }
+            if (requests.length === 0) {
+                showElement('noRequestsMessage');
+                return;
+            }
 
-    hideElement('noRequestsMessage');
+            hideElement('noRequestsMessage');
 
-    requests.forEach((request, index) => {
-        const row = tbody.insertRow();
-        row.innerHTML = `
-            <td class="time-display">${Utils.formatKoreanDateTime(request.requestDate)}</td>
-            <td>${request.name}</td>
-            <td>${request.email}</td>
-            <td>${request.phone}</td>
-            <td>${request.department}</td>
-            <td><span class="status-badge status-${request.role}">${getRoleDisplayName(request.role)}</span></td>
-            <td class="phone-number">${request.requestedUsername || '자동 생성'}</td>
-            <td><span class="status-badge status-pending">⏳ 대기중</span></td>
-            <td style="white-space: nowrap;">
-                <button class="btn btn-success btn-small" onclick="openApprovalModal(${index})" style="margin-right: 5px;">
-                    ✅ 승인
-                </button>
-                <button class="btn btn-danger btn-small" onclick="rejectRequest(${index})">
-                    ❌ 거부
-                </button>
-            </td>
-        `;
-    });
-}
+            requests.forEach((request, index) => {
+                const row = tbody.insertRow();
+                row.innerHTML = `
+                    <td class="time-display">${Utils.formatKoreanDateTime(request.requestDate)}</td>
+                    <td>${request.name}</td>
+                    <td>${request.email}</td>
+                    <td>${request.phone}</td>
+                    <td>${request.department}</td>
+                    <td><span class="status-badge status-${request.role}">${getRoleDisplayName(request.role)}</span></td>
+                    <td class="phone-number">${request.requestedUsername || '자동 생성'}</td>
+                    <td><span class="status-badge status-pending">⏳ 대기중</span></td>
+                    <td style="white-space: nowrap;">
+                        <button class="btn btn-success btn-small" onclick="openApprovalModal(${index})" style="margin-right: 5px;">
+                            ✅ 승인
+                        </button>
+                        <button class="btn btn-danger btn-small" onclick="rejectRequest(${index})">
+                            ❌ 거부
+                        </button>
+                    </td>
+                `;
+            });
+        }
 
         // 계정 신청 승인 모달 열기
         function openApprovalModal(index) {
@@ -1193,42 +1177,42 @@ function displayRequestsResults(requests) {
 
         // 사용자 목록 결과 표시
         function displayUsersResults(users) {
-    const tbody = document.querySelector('#usersTable tbody');
-    tbody.innerHTML = '';
+            const tbody = document.querySelector('#usersTable tbody');
+            tbody.innerHTML = '';
 
-    if (users.length === 0) {
-        const row = tbody.insertRow();
-        row.innerHTML = `
-            <td colspan="8" class="text-center" style="padding: 40px; color: #666;">
-                👥 등록된 사용자가 없습니다.
-            </td>
-        `;
-        return;
-    }
+            if (users.length === 0) {
+                const row = tbody.insertRow();
+                row.innerHTML = `
+                    <td colspan="8" class="text-center" style="padding: 40px; color: #666;">
+                        👥 등록된 사용자가 없습니다.
+                    </td>
+                `;
+                return;
+            }
 
-    users.forEach((user, index) => {
-        const row = tbody.insertRow();
-        const statusClass = user.status === 'approved' ? 'status-processed' : 'status-pending';
-        const statusText = user.status === 'approved' ? '✅ 활성' : '⏳ 대기중';
-        
-        row.innerHTML = `
-            <td class="phone-number">${user.username}</td>
-            <td>${user.name}</td>
-            <td>${user.email}</td>
-            <td><span class="status-badge status-${user.role}">${getRoleDisplayName(user.role)}</span></td>
-            <td><span class="status-badge ${statusClass}">${statusText}</span></td>
-            <td class="time-display">${Utils.formatDateOnly(user.createdAt) || '-'}</td>
-            <td class="time-display">${Utils.formatKoreanDateTime(user.lastLogin) || '-'}</td>
-            <td style="white-space: nowrap;">
-                <button class="btn btn-primary btn-small" onclick="editUser(${index})" style="margin-right: 5px;">✏️ 수정</button>
-                ${user.username !== currentUser.username ? 
-                    `<button class="btn btn-danger btn-small" onclick="deleteUser(${index})">🗑️ 삭제</button>` : 
-                    '<span class="text-small">현재 사용자</span>'
-                }
-            </td>
-        `;
-    });
-}
+            users.forEach((user, index) => {
+                const row = tbody.insertRow();
+                const statusClass = user.status === 'approved' ? 'status-processed' : 'status-pending';
+                const statusText = user.status === 'approved' ? '✅ 활성' : '⏳ 대기중';
+                
+                row.innerHTML = `
+                    <td class="phone-number">${user.username}</td>
+                    <td>${user.name}</td>
+                    <td>${user.email}</td>
+                    <td><span class="status-badge status-${user.role}">${getRoleDisplayName(user.role)}</span></td>
+                    <td><span class="status-badge ${statusClass}">${statusText}</span></td>
+                    <td class="time-display">${Utils.formatDateOnly(user.createdAt) || '-'}</td>
+                    <td class="time-display">${Utils.formatKoreanDateTime(user.lastLogin) || '-'}</td>
+                    <td style="white-space: nowrap;">
+                        <button class="btn btn-primary btn-small" onclick="editUser(${index})" style="margin-right: 5px;">✏️ 수정</button>
+                        ${user.username !== currentUser.username ? 
+                            `<button class="btn btn-danger btn-small" onclick="deleteUser(${index})">🗑️ 삭제</button>` : 
+                            '<span class="text-small">현재 사용자</span>'
+                        }
+                    </td>
+                `;
+            });
+        }
 
         // 권한 표시명 반환
         function getRoleDisplayName(role) {
@@ -1396,13 +1380,19 @@ function displayRequestsResults(requests) {
             }
         }
 
-        // Missing Call 조회
+        // ⭐ 수정된 Missing Call 조회 (날짜 검증 추가)
         async function searchCalls() {
             const searchDate = document.getElementById('searchDate').value;
             const processFilter = document.getElementById('processFilter').value;
             
             if (!searchDate || searchDate.trim() === '') {
                 alert('📅 조회할 날짜를 선택해주세요.');
+                return;
+            }
+
+            // ⭐ 날짜 검증 추가
+            if (!searchDate.match(/^\d{4}-\d{2}-\d{2}$/)) {
+                alert('⚠️ 올바른 날짜 형식이 아닙니다. YYYY-MM-DD 형식으로 입력해주세요.');
                 return;
             }
 
@@ -1470,7 +1460,7 @@ function displayRequestsResults(requests) {
             }
         }
 
-        // 콜 데이터 처리 (중복 그룹화)
+        // ⭐ 수정된 콜 데이터 처리 (안전한 시간 정렬)
         function processCallData(rawCalls) {
             const groups = {};
             
@@ -1488,11 +1478,25 @@ function displayRequestsResults(requests) {
             Object.keys(groups).forEach(phoneNumber => {
                 const calls = groups[phoneNumber];
                 
-                // 시간순으로 정렬
+                // ⭐ 안전한 시간 정렬
                 calls.sort((a, b) => {
-                    const timeA = new Date(`${a.date} ${a.startTime}`);
-                    const timeB = new Date(`${b.date} ${b.startTime}`);
-                    return timeA - timeB;
+                    try {
+                        // Utils를 사용한 안전한 시간 문자열 생성 후 비교
+                        const timeStrA = Utils.createSortableTimeString(a.date, a.startTime);
+                        const timeStrB = Utils.createSortableTimeString(b.date, b.startTime);
+                        
+                        Utils.debugLog('시간 정렬 비교:', { 
+                            a: { date: a.date, startTime: a.startTime, combined: timeStrA },
+                            b: { date: b.date, startTime: b.startTime, combined: timeStrB }
+                        });
+                        
+                        // 문자열로 비교 (YYYY-MM-DD HH:MM:SS 형식)
+                        return timeStrA.localeCompare(timeStrB);
+                    } catch (error) {
+                        Utils.debugLog('시간 정렬 오류:', error);
+                        // 오류 발생시 원본 순서 유지
+                        return 0;
+                    }
                 });
 
                 // OB콜 처리가 된 콜들을 기준으로 그룹 분리
@@ -1535,7 +1539,12 @@ function displayRequestsResults(requests) {
             Utils.debugLog('processCallData 완료:', {
                 rawCount: rawCalls.length,
                 processedCount: processedData.length,
-                sampleData: processedData.slice(0, 2)
+                sampleData: processedData.slice(0, 2).map(item => ({
+                    phoneNumber: item.phoneNumber,
+                    date: Utils.formatDateOnly(item.date),
+                    startTime: Utils.formatTimeOnly(item.startTime),
+                    callCount: item.callCount
+                }))
             });
 
             return processedData;
@@ -1551,9 +1560,9 @@ function displayRequestsResults(requests) {
             
             // 기본 정렬 적용
             const sortedData = [...data].sort((a, b) => {
-                const dateTimeA = new Date(`${a.date} ${a.startTime}`);
-                const dateTimeB = new Date(`${b.date} ${b.startTime}`);
-                return dateTimeB.getTime() - dateTimeA.getTime(); // 내림차순 (늦은 시간부터)
+                const timeStrA = Utils.createSortableTimeString(a.date, a.startTime);
+                const timeStrB = Utils.createSortableTimeString(b.date, b.startTime);
+                return timeStrB.localeCompare(timeStrA); // 내림차순 (늦은 시간부터)
             });
             
             // 정렬 화살표 업데이트
@@ -1607,37 +1616,37 @@ function displayRequestsResults(requests) {
         }
 
         // CSV 내보내기
-function exportToCSV() {
-    if (currentCallsData.length === 0) {
-        alert('📭 내보낼 데이터가 없습니다.');
-        return;
-    }
+        function exportToCSV() {
+            if (currentCallsData.length === 0) {
+                alert('📭 내보낼 데이터가 없습니다.');
+                return;
+            }
 
-    const headers = ['발생일', '인입시간', '대기시간(분)', '전화번호', '인입큐', '중복횟수', '처리상태', '처리담당자'];
-    const csvContent = [
-        headers.join(','),
-        ...currentCallsData.map(call => [
-            Utils.formatDateOnly(call.date),
-            Utils.formatTimeOnly(call.startTime),
-            Math.round(call.duration / 60),
-            call.phoneNumber,
-            `"${call.queue}"`,
-            call.callCount,
-            call.processStatus || '미처리',
-            call.processManager || ''
-        ].join(','))
-    ].join('\n');
+            const headers = ['발생일', '인입시간', '대기시간(분)', '전화번호', '인입큐', '중복횟수', '처리상태', '처리담당자'];
+            const csvContent = [
+                headers.join(','),
+                ...currentCallsData.map(call => [
+                    Utils.formatDateOnly(call.date),
+                    Utils.formatTimeOnly(call.startTime),
+                    Math.round(call.duration / 60),
+                    call.phoneNumber,
+                    `"${call.queue}"`,
+                    call.callCount,
+                    call.processStatus || '미처리',
+                    call.processManager || ''
+                ].join(','))
+            ].join('\n');
 
-    const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    const url = URL.createObjectURL(blob);
-    link.setAttribute('href', url);
-    link.setAttribute('download', `missing_calls_${document.getElementById('searchDate').value}.csv`);
-    link.style.visibility = 'hidden';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-}
+            const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            const url = URL.createObjectURL(blob);
+            link.setAttribute('href', url);
+            link.setAttribute('download', `missing_calls_${document.getElementById('searchDate').value}.csv`);
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
 
         // OB콜 처리 모달 열기
         function openProcessModal(index) {
