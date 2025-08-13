@@ -148,23 +148,31 @@ const Utils = {
         return new Date().toLocaleString('ko-KR');
     },
     
-    // ⭐ 날짜만 표시 (YYYY-MM-DD)
+    // ⭐ 날짜만 표시 (YYYY-MM-DD) - 시간대 문제 수정
     formatDateOnly(dateTimeStr) {
         try {
             if (!dateTimeStr) return '';
             
-            // ISO 문자열에서 날짜 부분만 추출
+            // ISO 문자열에서 날짜 부분만 추출 (시간대 변환 없이)
             if (typeof dateTimeStr === 'string') {
                 if (dateTimeStr.includes('T')) {
                     return dateTimeStr.split('T')[0];
                 }
-                // 이미 날짜만 있는 경우
+                // 이미 날짜만 있는 경우 (YYYY-MM-DD)
+                if (dateTimeStr.match(/^\d{4}-\d{2}-\d{2}$/)) {
+                    return dateTimeStr;
+                }
+                // 공백으로 분리된 날짜 시간 형태에서 날짜만 추출
                 return dateTimeStr.split(' ')[0];
             }
             
-            // Date 객체인 경우
+            // Date 객체인 경우 - 로컬 시간대 기준으로 날짜 추출
             if (dateTimeStr instanceof Date) {
-                return dateTimeStr.toISOString().split('T')[0];
+                // UTC 변환 대신 로컬 시간대 기준으로 날짜 생성
+                const year = dateTimeStr.getFullYear();
+                const month = String(dateTimeStr.getMonth() + 1).padStart(2, '0');
+                const day = String(dateTimeStr.getDate()).padStart(2, '0');
+                return `${year}-${month}-${day}`;
             }
             
             return dateTimeStr;
@@ -202,9 +210,12 @@ const Utils = {
                 }
             }
             
-            // Date 객체인 경우
+            // Date 객체인 경우 - 로컬 시간대 기준
             if (dateTimeStr instanceof Date) {
-                return dateTimeStr.toTimeString().split(' ')[0];
+                const hours = String(dateTimeStr.getHours()).padStart(2, '0');
+                const minutes = String(dateTimeStr.getMinutes()).padStart(2, '0');
+                const seconds = String(dateTimeStr.getSeconds()).padStart(2, '0');
+                return `${hours}:${minutes}:${seconds}`;
             }
             
             return dateTimeStr || '';
