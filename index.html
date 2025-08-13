@@ -153,38 +153,39 @@
                         </div>
                     </div>
                     
+                    <!-- ⭐ 개선된 테이블 구조 -->
                     <div class="results-content">
-    <!-- 테이블 래퍼 추가 -->
-    <div class="table-scroll-wrapper">
-        <div class="table-container">
-            <table id="callsTable">
-                <thead>
-                    <tr>
-                        <th style="position: sticky; top: 0; z-index: 200; background: #f8f9fa;">순번</th>
-                        <th style="position: sticky; top: 0; z-index: 200; background: #f8f9fa;">발생일</th>
-                        <th class="sortable-header" onclick="sortTable('startTime')" title="클릭하여 정렬" 
-                            style="position: sticky; top: 0; z-index: 200; background: #f8f9fa;">
-                            인입시간
-                            <span id="sortArrow-startTime" class="sort-arrow desc active"></span>
-                        </th>
-                        <th style="position: sticky; top: 0; z-index: 200; background: #f8f9fa;">대기시간(분)</th>
-                        <th style="position: sticky; top: 0; z-index: 200; background: #f8f9fa;">전화번호</th>
-                        <th style="position: sticky; top: 0; z-index: 200; background: #f8f9fa;">인입큐</th>
-                        <th class="sortable-header" onclick="sortTable('callCount')" title="클릭하여 정렬"
-                            style="position: sticky; top: 0; z-index: 200; background: #f8f9fa;">
-                            중복횟수
-                            <span id="sortArrow-callCount" class="sort-arrow none"></span>
-                        </th>
-                        <th style="position: sticky; top: 0; z-index: 200; background: #f8f9fa;">처리상태</th>
-                        <th style="position: sticky; top: 0; z-index: 200; background: #f8f9fa;">처리담당자</th>
-                        <th style="position: sticky; top: 0; z-index: 200; background: #f8f9fa;">액션</th>
-                    </tr>
-                </thead>
-                <tbody></tbody>
-            </table>
-        </div>
-    </div>
-</div>
+                        <div class="table-scroll-wrapper">
+                            <div class="table-container">
+                                <table id="callsTable">
+                                    <thead>
+                                        <tr>
+                                            <th style="position: sticky; top: 0; z-index: 200; background: #f8f9fa; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">순번</th>
+                                            <th style="position: sticky; top: 0; z-index: 200; background: #f8f9fa; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">발생일</th>
+                                            <th class="sortable-header" onclick="sortTable('startTime')" title="클릭하여 정렬" 
+                                                style="position: sticky; top: 0; z-index: 200; background: #f8f9fa; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                                                인입시간
+                                                <span id="sortArrow-startTime" class="sort-arrow desc active"></span>
+                                            </th>
+                                            <th style="position: sticky; top: 0; z-index: 200; background: #f8f9fa; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">대기시간(분)</th>
+                                            <th style="position: sticky; top: 0; z-index: 200; background: #f8f9fa; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">전화번호</th>
+                                            <th style="position: sticky; top: 0; z-index: 200; background: #f8f9fa; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">인입큐</th>
+                                            <th class="sortable-header" onclick="sortTable('callCount')" title="클릭하여 정렬"
+                                                style="position: sticky; top: 0; z-index: 200; background: #f8f9fa; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                                                중복횟수
+                                                <span id="sortArrow-callCount" class="sort-arrow none"></span>
+                                            </th>
+                                            <th style="position: sticky; top: 0; z-index: 200; background: #f8f9fa; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">처리상태</th>
+                                            <th style="position: sticky; top: 0; z-index: 200; background: #f8f9fa; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">처리담당자</th>
+                                            <th style="position: sticky; top: 0; z-index: 200; background: #f8f9fa; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">액션</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
 
                 <div id="noDataMessage" class="no-data-message text-center hidden">
                     <h3 id="noDataTitle">📭 조회된 데이터가 없습니다</h3>
@@ -506,8 +507,90 @@
             direction: 'desc'       // 기본 정렬 방향: 내림차순 (늦은 시간부터)
         };
 
+        // ⭐ 동적 스타일 적용 함수 (올바르게 수정)
+        function applyFixedHeaderStyles() {
+            const style = document.createElement('style');
+            style.textContent = `
+                /* 고정 헤더를 위한 런타임 보강 스타일 */
+                .results-content {
+                    flex: 1;
+                    overflow-y: auto;
+                    overflow-x: hidden;
+                    background: white;
+                    position: relative;
+                    min-height: 0;
+                    scroll-behavior: smooth;
+                    height: 100%;
+                }
+                
+                .table-scroll-wrapper {
+                    overflow-x: auto;
+                    overflow-y: visible;
+                    width: 100%;
+                    height: 100%;
+                }
+                
+                .table-container {
+                    position: relative;
+                    background: white;
+                    width: 100%;
+                    min-height: 100%;
+                }
+                
+                #callsTable {
+                    width: 100%;
+                    border-collapse: collapse;
+                    font-size: 0.8rem;
+                    background: white;
+                    position: relative;
+                }
+                
+                #callsTable th {
+                    background: #f8f9fa !important;
+                    font-weight: 600;
+                    color: #333;
+                    font-size: 0.75rem;
+                    text-transform: uppercase;
+                    letter-spacing: 0.3px;
+                    position: sticky !important;
+                    top: 0 !important;
+                    z-index: 200 !important;
+                    border-bottom: 2px solid #e5e7eb;
+                    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+                    padding: 8px;
+                    /* 브라우저 호환성 */
+                    -webkit-position: sticky;
+                    -webkit-top: 0;
+                }
+                
+                #callsTable td {
+                    color: #555;
+                    background: white;
+                    padding: 6px 8px;
+                    border-bottom: 1px solid #f1f3f4;
+                }
+                
+                /* 모바일 대응 */
+                @media (max-width: 768px) {
+                    #callsTable {
+                        min-width: 800px;
+                    }
+                    
+                    #callsTable th {
+                        position: sticky !important;
+                        top: 0 !important;
+                        z-index: 200 !important;
+                    }
+                }
+            `;
+            document.head.appendChild(style);
+        }
+
         // 페이지 로드시 초기화
         document.addEventListener('DOMContentLoaded', function() {
+            // ⭐ 헤더 고정 스타일 먼저 적용
+            applyFixedHeaderStyles();
+            // 메인 초기화
             initializeApp();
         });
 
