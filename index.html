@@ -1481,78 +1481,102 @@
             forceFixTableHeader();
         }
 
-        // 테이블 상단으로 스크롤 (개선된 버전)
+        // 테이블 상단으로 스크롤 (수정된 확실한 버전)
         function scrollToTop() {
             try {
-                // 방법 1: 메인 스크롤 컨테이너 찾기
-                const resultsContent = document.querySelector('.results-content');
-                if (resultsContent) {
-                    resultsContent.scrollTo({
-                        top: 0,
-                        behavior: 'smooth'
+                Utils.debugLog('=== scrollToTop 실행 시작 ===');
+                
+                // 현재 스크롤 가능한 모든 요소 찾기
+                const scrollableElements = [
+                    document.querySelector('.results-content'),
+                    document.querySelector('.table-scroll-wrapper'),
+                    document.querySelector('.results-container'),
+                    document.querySelector('#dashboardSection'),
+                    document.querySelector('.content-wrapper')
+                ];
+                
+                // 각 요소의 스크롤 가능 여부 확인
+                for (let i = 0; i < scrollableElements.length; i++) {
+                    const element = scrollableElements[i];
+                    if (!element) continue;
+                    
+                    const hasVerticalScroll = element.scrollHeight > element.clientHeight;
+                    const currentScrollTop = element.scrollTop;
+                    
+                    Utils.debugLog(`요소 ${i + 1} (${element.className}):`, {
+                        scrollHeight: element.scrollHeight,
+                        clientHeight: element.clientHeight,
+                        scrollTop: currentScrollTop,
+                        hasVerticalScroll: hasVerticalScroll
                     });
-                    Utils.debugLog('방법 1: results-content 스크롤 성공');
-                    return;
+                    
+                    // 스크롤이 가능하고 현재 스크롤 위치가 0이 아닌 요소에 스크롤 적용
+                    if (hasVerticalScroll && currentScrollTop > 0) {
+                        element.scrollTo({
+                            top: 0,
+                            behavior: 'smooth'
+                        });
+                        Utils.debugLog(`✅ 스크롤 성공: ${element.className || element.id}`);
+                        
+                        // 스크롤 완료 확인을 위한 검증
+                        setTimeout(() => {
+                            Utils.debugLog(`스크롤 후 위치 확인: ${element.scrollTop}`);
+                        }, 500);
+                        
+                        return;
+                    }
                 }
                 
-                // 방법 2: 테이블 스크롤 래퍼 찾기
-                const tableWrapper = document.querySelector('.table-scroll-wrapper');
-                if (tableWrapper) {
-                    tableWrapper.scrollTo({
-                        top: 0,
-                        behavior: 'smooth'
-                    });
-                    Utils.debugLog('방법 2: table-scroll-wrapper 스크롤 성공');
-                    return;
-                }
-                
-                // 방법 3: 결과 컨테이너 찾기
-                const resultsContainer = document.querySelector('.results-container');
-                if (resultsContainer) {
-                    resultsContainer.scrollTo({
-                        top: 0,
-                        behavior: 'smooth'
-                    });
-                    Utils.debugLog('방법 3: results-container 스크롤 성공');
-                    return;
-                }
-                
-                // 방법 4: 테이블 자체로 스크롤
-                const callsTable = document.getElementById('callsTable');
-                if (callsTable) {
-                    callsTable.scrollIntoView({
+                // 위 방법들이 모두 실패하면 테이블 헤더로 직접 이동
+                const tableHeader = document.querySelector('#callsTable thead');
+                if (tableHeader) {
+                    tableHeader.scrollIntoView({
                         behavior: 'smooth',
                         block: 'start'
                     });
-                    Utils.debugLog('방법 4: 테이블 scrollIntoView 성공');
+                    Utils.debugLog('✅ 테이블 헤더로 scrollIntoView 성공');
                     return;
                 }
                 
-                // 방법 5: 대시보드 섹션으로 스크롤
-                const dashboardSection = document.getElementById('dashboardSection');
-                if (dashboardSection) {
-                    dashboardSection.scrollTo({
-                        top: 0,
-                        behavior: 'smooth'
+                // 최후의 수단: 검색 섹션으로 이동 (항상 상단에 있음)
+                const searchSection = document.querySelector('.search-section');
+                if (searchSection) {
+                    searchSection.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
                     });
-                    Utils.debugLog('방법 5: dashboard 섹션 스크롤 성공');
+                    Utils.debugLog('✅ 검색 섹션으로 scrollIntoView 성공');
                     return;
                 }
                 
-                // 방법 6: 마지막 수단 - 윈도우 스크롤
+                // 정말 마지막 수단: 강제 윈도우 스크롤
                 window.scrollTo({
                     top: 0,
                     behavior: 'smooth'
                 });
-                Utils.debugLog('방법 6: window 스크롤 사용');
+                Utils.debugLog('✅ window 스크롤 사용');
                 
             } catch (error) {
-                Utils.debugLog('scrollToTop 오류:', error);
-                // 에러 발생시 기본 스크롤
+                Utils.debugLog('❌ scrollToTop 오류:', error);
+                
+                // 에러 발생시 즉시 스크롤 (애니메이션 없이)
                 try {
+                    // 모든 스크롤 가능한 요소를 0으로 설정
+                    const allScrollable = document.querySelectorAll('.results-content, .table-scroll-wrapper, .results-container, #dashboardSection');
+                    allScrollable.forEach(el => {
+                        if (el && el.scrollTop > 0) {
+                            el.scrollTop = 0;
+                            Utils.debugLog('강제 스크롤 적용:', el.className || el.id);
+                        }
+                    });
+                    
+                    // 윈도우도 스크롤
                     window.scrollTo(0, 0);
+                    Utils.debugLog('강제 window 스크롤 적용');
+                    
                 } catch (e) {
-                    Utils.debugLog('기본 스크롤도 실패:', e);
+                    Utils.debugLog('❌ 강제 스크롤도 실패:', e);
+                    alert('⚠️ 스크롤 기능에 문제가 있습니다. 페이지를 새로고침해주세요.');
                 }
             }
         }
