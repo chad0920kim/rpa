@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>투어비스 항공(국제선) Missing Call 처리 시스템</title>
+    <title>투어비스 항공(국제선) Missed Call 처리 시스템</title>
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -30,7 +30,7 @@
         <div class="login-box">
             <div class="login-header">
                 <h1>투어비스</h1>
-                <p>항공(국제선) Missing Call 처리 시스템</p>
+                <p>항공(국제선) Missed Call 처리 시스템</p>
             </div>
             
             <form id="loginForm">
@@ -75,7 +75,7 @@
         <!-- 고정 헤더 -->
         <div class="fixed-header">
             <div class="header">
-                <h1>투어비스 Missing Call 관리 시스템</h1>
+                <h1>투어비스 Missed Call 관리 시스템</h1>
                 <div class="user-info">
                     <span class="user-name" id="currentUserName">사용자</span>
                     <span class="user-role" id="currentUserRole">권한</span>
@@ -99,13 +99,17 @@
                         <input type="date" id="searchDate">
                     </div>
                     <div class="form-group">
+                        <label for="phoneNumberFilter">전화번호</label>
+                        <input type="text" id="phoneNumberFilter" placeholder="전화번호 입력" style="min-width: 140px;">
+                    </div>
+                    <div class="form-group">
                         <label for="processFilter">처리 상태</label>
                         <select id="processFilter">
                             <option value="all">전체</option>
                             <option value="processed">처리 완료</option>
                             <option value="pending">미처리</option>
-                            <option value="onhold">보류</option>
-                            <option value="retry">재시도 필요</option>
+                            <option value="completed">기 처리완료</option>
+                            <option value="absent">부재(문자발송)</option>
                         </select>
                     </div>
                     <div class="form-group">
@@ -363,11 +367,11 @@
         </div>
     </div>
 
-    <!-- OB콜 처리 모달 - UI 개선 완료 버전 -->
+    <!-- Missed Call 처리 모달 - UI 개선 완료 버전 -->
     <div id="processModal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
-                <h3>📞 Missing Call 처리</h3>
+                <h3>📞 Missed Call 처리</h3>
                 <div class="call-info-card">
                     <div class="call-info-row">
                         <span class="info-label">전화번호:</span>
@@ -388,8 +392,8 @@
                             <option value="">선택해주세요</option>
                             <option value="완료">✅ 완료</option>
                             <option value="미완료">❌ 미완료</option>
-                            <option value="보류">⏸️ 보류</option>
-                            <option value="재시도">🔄 재시도 필요</option>
+                            <option value="기 처리완료">⭐ 기 처리완료</option>
+                            <option value="부재(문자발송)">📱 부재(문자발송)</option>
                         </select>
                     </div>
                     
@@ -1030,9 +1034,10 @@
             }
         }
 
-        // Missing Call 조회
+        // Missed Call 조회
         async function searchCalls() {
             const searchDate = document.getElementById('searchDate').value;
+            const phoneNumberFilter = document.getElementById('phoneNumberFilter').value.trim();
             const processFilter = document.getElementById('processFilter').value;
             const queueFilter = document.getElementById('queueFilter').value;
             
@@ -1051,7 +1056,12 @@
                 hideElement('callsResults');
                 hideElement('noDataMessage');
                 
-                Utils.debugLog('Missing Call 조회 시작:', { date: searchDate, processFilter, queueFilter });
+                Utils.debugLog('Missed Call 조회 시작:', { 
+                    date: searchDate, 
+                    phoneNumberFilter, 
+                    processFilter, 
+                    queueFilter 
+                });
                 
                 const result = await GoogleAppsScriptAPI.getCalls({ date: searchDate });
                 
@@ -1061,6 +1071,15 @@
                 if (result.success) {
                     data = processCallData(result.calls || []);
                     
+                    // 전화번호 필터 적용
+                    if (phoneNumberFilter) {
+                        const phonePattern = phoneNumberFilter.replace(/\D/g, ''); // 숫자만 추출
+                        data = data.filter(call => {
+                            const callPhone = call.phoneNumber.replace(/\D/g, '');
+                            return callPhone.includes(phonePattern);
+                        });
+                    }
+                    
                     // 처리 상태 필터 적용
                     if (processFilter !== 'all') {
                         data = data.filter(call => {
@@ -1068,13 +1087,13 @@
                             
                             switch (processFilter) {
                                 case 'processed':
-                                    return status && status !== '' && status !== '보류' && status !== '재시도';
+                                    return status && status !== '' && status !== '기 처리완료' && status !== '부재(문자발송)';
                                 case 'pending':
                                     return !status || status === '';
-                                case 'onhold':
-                                    return status === '보류';
-                                case 'retry':
-                                    return status === '재시도' || status === '재시도 필요';
+                                case 'completed':
+                                    return status === '기 처리완료';
+                                case 'absent':
+                                    return status === '부재(문자발송)';
                                 default:
                                     return true;
                             }
@@ -1100,12 +1119,15 @@
                     const noDataSubtitle = document.getElementById('noDataSubtitle');
                     
                     let filterDesc = '';
+                    if (phoneNumberFilter) {
+                        filterDesc += `전화번호 '${phoneNumberFilter}' `;
+                    }
                     if (processFilter !== 'all') {
                         const filterNames = {
                             'processed': '처리 완료된',
                             'pending': '미처리',
-                            'onhold': '보류 상태의',
-                            'retry': '재시도 필요한'
+                            'completed': '기 처리완료',
+                            'absent': '부재(문자발송)'
                         };
                         filterDesc += filterNames[processFilter] + ' ';
                     }
@@ -1160,7 +1182,7 @@
                     }
                 });
 
-                // OB콜 처리가 된 콜들을 기준으로 그룹 분리
+                // 처리가 된 콜들을 기준으로 그룹 분리
                 let currentGroup = [];
                 
                 for (let i = 0; i < calls.length; i++) {
@@ -1230,17 +1252,21 @@
         function displayCallsResultsWithData(data) {
             const countDiv = document.getElementById('resultsCount');
             const tbody = document.querySelector('#callsTable tbody');
+            const phoneNumberFilter = document.getElementById('phoneNumberFilter').value.trim();
             const processFilter = document.getElementById('processFilter').value;
             const queueFilter = document.getElementById('queueFilter').value;
             
             // 필터 상태에 따른 제목 변경
             let filterText = '';
+            if (phoneNumberFilter) {
+                filterText += ` (전화번호: ${phoneNumberFilter})`;
+            }
             if (processFilter !== 'all') {
                 const filterNames = {
                     'processed': '처리 완료',
                     'pending': '미처리',
-                    'onhold': '보류',
-                    'retry': '재시도 필요'
+                    'completed': '기 처리완료',
+                    'absent': '부재(문자발송)'
                 };
                 filterText += ` (${filterNames[processFilter]})`;
             }
@@ -1281,13 +1307,13 @@
                             statusClass = 'status-rejected';
                             statusText = '❌ 미완료';
                             break;
-                        case '보류':
-                            statusClass = 'status-pending';
-                            statusText = '⏸️ 보류';
+                        case '기 처리완료':
+                            statusClass = 'status-processed';
+                            statusText = '⭐ 기 처리완료';
                             break;
-                        case '재시도':
+                        case '부재(문자발송)':
                             statusClass = 'status-warning';
-                            statusText = '🔄 재시도';
+                            statusText = '📱 부재(문자발송)';
                             break;
                         default:
                             statusClass = 'status-processed';
@@ -1361,7 +1387,7 @@
             const link = document.createElement('a');
             const url = URL.createObjectURL(blob);
             link.setAttribute('href', url);
-            link.setAttribute('download', `missing_calls_${document.getElementById('searchDate').value}.csv`);
+            link.setAttribute('download', `missed_calls_${document.getElementById('searchDate').value}.csv`);
             link.style.visibility = 'hidden';
             document.body.appendChild(link);
             link.click();
@@ -1510,7 +1536,7 @@
             return roleNames[role] || role;
         }
 
-        // OB콜 처리 모달 열기 (순번 고려한 안전한 버전)
+        // Missed Call 처리 모달 열기 (순번 고려한 안전한 버전)
         function openProcessModal(tableIndex) {
             Utils.debugLog('=== openProcessModal 시작 ===');
             Utils.debugLog('요청된 테이블 인덱스:', tableIndex);
@@ -1621,7 +1647,7 @@
             Utils.debugLog('모달 설정 완료');
         }
 
-        // OB콜 처리 모달 닫기
+        // Missed Call 처리 모달 닫기
         function closeProcessModal() {
             // 하이라이트 제거
             if (currentProcessingCall && currentProcessingCall.tableIndex !== undefined) {
@@ -1633,7 +1659,7 @@
             hideAlert('processModalError');
         }
 
-        // OB콜 처리 저장 (개선된 안전 버전)
+        // Missed Call 처리 저장 (개선된 안전 버전)
         async function saveProcess() {
             const processStatus = document.getElementById('processStatus').value;
             const processManager = document.getElementById('processManager').value.trim();
@@ -1883,13 +1909,13 @@
                                 statusClass = 'status-rejected';
                                 statusText = '❌ 미완료';
                                 break;
-                            case '보류':
-                                statusClass = 'status-pending';
-                                statusText = '⏸️ 보류';
+                            case '기 처리완료':
+                                statusClass = 'status-processed';
+                                statusText = '⭐ 기 처리완료';
                                 break;
-                            case '재시도':
+                            case '부재(문자발송)':
                                 statusClass = 'status-warning';
-                                statusText = '🔄 재시도';
+                                statusText = '📱 부재(문자발송)';
                                 break;
                             default:
                                 statusClass = 'status-processed';
