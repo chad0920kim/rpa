@@ -1071,12 +1071,16 @@
                 if (result.success) {
                     data = processCallData(result.calls || []);
                     
-                    // 전화번호 필터 적용
+                    // 전화번호 필터 적용 (일부 자릿수 일치 지원)
                     if (phoneNumberFilter) {
-                        const phonePattern = phoneNumberFilter.replace(/\D/g, ''); // 숫자만 추출
+                        const phonePattern = String(phoneNumberFilter).replace(/\D/g, ''); // 숫자만 추출
                         data = data.filter(call => {
-                            const callPhone = call.phoneNumber.replace(/\D/g, '');
-                            return callPhone.includes(phonePattern);
+                            // 전화번호를 안전하게 문자열로 변환 후 숫자만 추출
+                            const callPhoneStr = String(call.phoneNumber || '');
+                            const callPhone = callPhoneStr.replace(/\D/g, '');
+                            
+                            // 일부 자릿수만 일치해도 조회 가능
+                            return callPhone.includes(phonePattern) || phonePattern.includes(callPhone);
                         });
                     }
                     
