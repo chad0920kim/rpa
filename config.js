@@ -4,7 +4,7 @@
 const CONFIG = {
     // Google Sheets 설정
     GOOGLE_SHEETS: {
-        // 투어비스 Missing Call 데이터 시트
+        // 투어비스 Missed Call 데이터 시트
         TOURVIS_SPREADSHEET_ID: '15Pyx-yh-G8OmQPhAc7DVze6Yl6drTXf3wKIr1dB1cfE',
         TOURVIS_WORKSHEET_NAME: '미싱콜',
         
@@ -117,7 +117,7 @@ const CONFIG = {
         // 로그인 화면 설정
         LOGIN: {
             COMPANY_NAME: '투어비스',
-            SYSTEM_NAME: '항공(국제선) Missing Call 처리 시스템',
+            SYSTEM_NAME: '항공(국제선) Missed Call 처리 시스템',
             COPYRIGHT: '© 2025 TideSquare. All rights reserved.',
             BACKGROUND_COLOR: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
         }
@@ -565,7 +565,7 @@ class GoogleAppsScriptAPI {
         return await this.request('rejectRequest', { requestId, reason });
     }
     
-    // Missing Call 관련 API
+    // Missed Call 관련 API
     static async getCalls(params = {}) {
         return await this.request('getCalls', params);
     }
@@ -662,7 +662,7 @@ function validateConfig() {
 
 // 초기화 함수
 function initializeApp() {
-    Utils.debugLog('Initializing Tourvis Missing Call System...');
+    Utils.debugLog('Initializing Tourvis Missed Call System...');
     
     // 설정 검증
     validateConfig();
