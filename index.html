@@ -181,7 +181,7 @@
                                             </th>
                                             <th style="position: sticky; top: 0; z-index: 200; background: #f8f9fa; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">처리상태</th>
                                             <th style="position: sticky; top: 0; z-index: 200; background: #f8f9fa; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">처리담당자</th>
-                                            <th style="position: sticky; top: 0; z-index: 200; background: #f8f9fa; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">OB콜</th>
+                                            <th style="position: sticky; top: 0; z-index: 200; background: #f8f9fa; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">액션</th>
                                         </tr>
                                     </thead>
                                     <tbody></tbody>
@@ -219,7 +219,7 @@
                                 <th>상태</th>
                                 <th>등록일</th>
                                 <th>마지막 로그인</th>
-                                <th>OB콜</th>
+                                <th>액션</th>
                             </tr>
                         </thead>
                         <tbody></tbody>
@@ -250,7 +250,7 @@
                                 <th>요청 권한</th>
                                 <th>희망 ID</th>
                                 <th>상태</th>
-                                <th>OB콜</th>
+                                <th>액션</th>
                             </tr>
                         </thead>
                         <tbody></tbody>
@@ -515,6 +515,42 @@
         function applyFixedHeaderStyles() {
             const style = document.createElement('style');
             style.textContent = `
+                /* 전체 페이지 높이 최적화 */
+                html, body {
+                    height: 100vh;
+                    overflow: hidden;
+                    margin: 0;
+                    padding: 0;
+                }
+                
+                /* 메인 컨테이너 높이 최적화 */
+                .main-container {
+                    height: 100vh;
+                    display: flex;
+                    flex-direction: column;
+                    overflow: hidden;
+                }
+                
+                .content-wrapper {
+                    margin-top: 160px;
+                    height: calc(100vh - 160px);
+                    overflow: hidden;
+                    flex: 1;
+                }
+                
+                .section {
+                    height: 100%;
+                    background: rgba(255, 255, 255, 0.95);
+                    display: none;
+                    flex-direction: column;
+                    position: relative;
+                    overflow: hidden;
+                }
+                
+                .section.active {
+                    display: flex;
+                }
+                
                 /* 고정 헤더를 위한 런타임 보강 스타일 */
                 .results-content {
                     flex: 1;
@@ -525,6 +561,7 @@
                     min-height: 0;
                     scroll-behavior: smooth;
                     height: 100%;
+                    max-height: 100%;
                 }
                 
                 .table-scroll-wrapper {
@@ -539,7 +576,8 @@
                     position: relative;
                     background: white;
                     width: 100%;
-                    min-height: 100%;
+                    min-height: auto;
+                    height: auto;
                 }
                 
                 #callsTable {
@@ -549,6 +587,19 @@
                     background: white;
                     position: relative;
                     table-layout: fixed;
+                }
+                
+                /* 결과 컨테이너 높이 최적화 */
+                .results-container {
+                    flex: 1;
+                    overflow: hidden;
+                    display: flex;
+                    flex-direction: column;
+                    background: white;
+                    min-height: 0;
+                    position: relative;
+                    height: 100%;
+                    max-height: 100%;
                 }
                 
                 /* 헤더 고정 강화 - 더 구체적인 선택자와 !important */
@@ -590,16 +641,25 @@
                     position: relative;
                 }
                 
-                /* 테이블 컨테이너에 명시적 높이 설정 */
-                .results-container {
-                    position: relative;
-                    height: 100%;
-                    display: flex;
-                    flex-direction: column;
+                /* 테이블 바디 높이 최적화 */
+                #callsTable tbody {
+                    background: white;
+                }
+                
+                /* 빈 공간 제거 */
+                .no-data-message {
+                    padding: 30px;
+                    margin: 0;
+                    height: auto;
                 }
                 
                 /* 모바일 대응 강화 */
                 @media (max-width: 768px) {
+                    .content-wrapper {
+                        margin-top: 180px;
+                        height: calc(100vh - 180px);
+                    }
+                    
                     #callsTable {
                         min-width: 800px;
                     }
@@ -610,6 +670,13 @@
                         position: sticky !important;
                         top: 0 !important;
                         z-index: 999 !important;
+                    }
+                }
+                
+                @media (max-width: 480px) {
+                    .content-wrapper {
+                        margin-top: 200px;
+                        height: calc(100vh - 200px);
                     }
                 }
                 
@@ -2022,7 +2089,7 @@
                         cells[8].textContent = processManager;
                     }
                     
-                    // OB콜 버튼 업데이트 (10번째 칼럼, 인덱스 9)
+                    // 액션 버튼 업데이트 (10번째 칼럼, 인덱스 9)
                     if (cells[9]) {
                         cells[9].innerHTML = `
                             <button class="btn btn-primary btn-small" onclick="openProcessModal(${tableIndex})">
