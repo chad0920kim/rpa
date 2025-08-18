@@ -128,9 +128,6 @@
                             📋 조회
                         </button>
                     </div>
-                    <div class="form-group">
-                        <button class="btn btn-secondary" onclick="refreshConnection()">🔄 연결 확인</button>
-                    </div>
                 </div>
             </div>
         </div>
@@ -908,38 +905,22 @@
             }
         }
 
-        // 연결 모니터링 시작
+        // 연결 모니터링 시작 (간소화 버전)
         function startConnectionMonitoring() {
-            // 5분마다 연결 상태 확인
+            // 10분마다 연결 상태 확인 (빈도 감소)
             connectionCheckInterval = setInterval(async () => {
                 try {
                     const result = await GoogleAppsScriptAPI.testConnection();
                     if (!result.success) {
-                        showConnectionStatus('disconnected', '❌ 연결 끊김');
+                        Utils.debugLog('백그라운드 연결 확인 실패:', result.message);
                     }
                 } catch (error) {
-                    showConnectionStatus('disconnected', '❌ 연결 끊김');
+                    Utils.debugLog('백그라운드 연결 확인 오류:', error.message);
                 }
-            }, 5 * 60 * 1000); // 5분
+            }, 10 * 60 * 1000); // 10분
         }
 
-        // 연결 새로고침
-        async function refreshConnection() {
-            showConnectionStatus('testing', '🔄 연결 확인 중...');
-            
-            try {
-                const result = await GoogleAppsScriptAPI.testConnection();
-                if (result.success) {
-                    showConnectionStatus('connected', '✅ 연결 복구됨');
-                } else {
-                    showConnectionStatus('disconnected', '❌ 연결 실패');
-                    alert('❌ 연결 확인 실패: ' + result.message);
-                }
-            } catch (error) {
-                showConnectionStatus('disconnected', '❌ 연결 실패');
-                alert('❌ 연결 확인 실패: ' + error.message);
-            }
-        }
+
 
         // 이벤트 리스너 설정
         function setupEventListeners() {
@@ -1500,14 +1481,79 @@
             forceFixTableHeader();
         }
 
-        // 테이블 상단으로 스크롤
+        // 테이블 상단으로 스크롤 (개선된 버전)
         function scrollToTop() {
-            const resultsContent = document.querySelector('.results-content');
-            if (resultsContent) {
-                resultsContent.scrollTo({
+            try {
+                // 방법 1: 메인 스크롤 컨테이너 찾기
+                const resultsContent = document.querySelector('.results-content');
+                if (resultsContent) {
+                    resultsContent.scrollTo({
+                        top: 0,
+                        behavior: 'smooth'
+                    });
+                    Utils.debugLog('방법 1: results-content 스크롤 성공');
+                    return;
+                }
+                
+                // 방법 2: 테이블 스크롤 래퍼 찾기
+                const tableWrapper = document.querySelector('.table-scroll-wrapper');
+                if (tableWrapper) {
+                    tableWrapper.scrollTo({
+                        top: 0,
+                        behavior: 'smooth'
+                    });
+                    Utils.debugLog('방법 2: table-scroll-wrapper 스크롤 성공');
+                    return;
+                }
+                
+                // 방법 3: 결과 컨테이너 찾기
+                const resultsContainer = document.querySelector('.results-container');
+                if (resultsContainer) {
+                    resultsContainer.scrollTo({
+                        top: 0,
+                        behavior: 'smooth'
+                    });
+                    Utils.debugLog('방법 3: results-container 스크롤 성공');
+                    return;
+                }
+                
+                // 방법 4: 테이블 자체로 스크롤
+                const callsTable = document.getElementById('callsTable');
+                if (callsTable) {
+                    callsTable.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                    Utils.debugLog('방법 4: 테이블 scrollIntoView 성공');
+                    return;
+                }
+                
+                // 방법 5: 대시보드 섹션으로 스크롤
+                const dashboardSection = document.getElementById('dashboardSection');
+                if (dashboardSection) {
+                    dashboardSection.scrollTo({
+                        top: 0,
+                        behavior: 'smooth'
+                    });
+                    Utils.debugLog('방법 5: dashboard 섹션 스크롤 성공');
+                    return;
+                }
+                
+                // 방법 6: 마지막 수단 - 윈도우 스크롤
+                window.scrollTo({
                     top: 0,
                     behavior: 'smooth'
                 });
+                Utils.debugLog('방법 6: window 스크롤 사용');
+                
+            } catch (error) {
+                Utils.debugLog('scrollToTop 오류:', error);
+                // 에러 발생시 기본 스크롤
+                try {
+                    window.scrollTo(0, 0);
+                } catch (e) {
+                    Utils.debugLog('기본 스크롤도 실패:', e);
+                }
             }
         }
 
