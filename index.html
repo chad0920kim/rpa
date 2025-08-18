@@ -511,7 +511,7 @@
             direction: 'desc'       // 기본 정렬 방향: 내림차순 (늦은 시간부터)
         };
 
-        // ⭐ 동적 스타일 적용 함수 (올바르게 수정)
+        // ⭐ 동적 스타일 적용 함수 (헤더 고정 강화 버전)
         function applyFixedHeaderStyles() {
             const style = document.createElement('style');
             style.textContent = `
@@ -532,6 +532,7 @@
                     overflow-y: visible;
                     width: 100%;
                     height: 100%;
+                    position: relative;
                 }
                 
                 .table-container {
@@ -547,47 +548,102 @@
                     font-size: 0.8rem;
                     background: white;
                     position: relative;
+                    table-layout: fixed;
                 }
                 
+                /* 헤더 고정 강화 - 더 구체적인 선택자와 !important */
+                #callsTable thead th,
                 #callsTable th {
                     background: #f8f9fa !important;
-                    font-weight: 600;
-                    color: #333;
-                    font-size: 0.75rem;
-                    text-transform: uppercase;
-                    letter-spacing: 0.3px;
+                    font-weight: 600 !important;
+                    color: #333 !important;
+                    font-size: 0.75rem !important;
+                    text-transform: uppercase !important;
+                    letter-spacing: 0.3px !important;
+                    padding: 8px !important;
+                    border-bottom: 2px solid #e5e7eb !important;
+                    box-shadow: 0 2px 4px rgba(0,0,0,0.15) !important;
+                    
+                    /* 강화된 sticky 설정 */
+                    position: -webkit-sticky !important;
                     position: sticky !important;
                     top: 0 !important;
-                    z-index: 200 !important;
-                    border-bottom: 2px solid #e5e7eb;
-                    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-                    padding: 8px;
+                    z-index: 999 !important;
+                    
                     /* 브라우저 호환성 */
-                    -webkit-position: sticky;
-                    -webkit-top: 0;
+                    -webkit-position: sticky !important;
+                    -webkit-top: 0 !important;
+                    -webkit-transform: translateZ(0) !important;
+                    transform: translateZ(0) !important;
+                    
+                    /* 추가 안정성 */
+                    will-change: transform !important;
+                    backface-visibility: hidden !important;
                 }
                 
+                #callsTable tbody td,
                 #callsTable td {
                     color: #555;
                     background: white;
                     padding: 6px 8px;
                     border-bottom: 1px solid #f1f3f4;
+                    position: relative;
                 }
                 
-                /* 모바일 대응 */
+                /* 테이블 컨테이너에 명시적 높이 설정 */
+                .results-container {
+                    position: relative;
+                    height: 100%;
+                    display: flex;
+                    flex-direction: column;
+                }
+                
+                /* 모바일 대응 강화 */
                 @media (max-width: 768px) {
                     #callsTable {
                         min-width: 800px;
                     }
                     
+                    #callsTable thead th,
                     #callsTable th {
+                        position: -webkit-sticky !important;
                         position: sticky !important;
                         top: 0 !important;
-                        z-index: 200 !important;
+                        z-index: 999 !important;
                     }
+                }
+                
+                /* 추가: 테이블이 로드된 후 헤더 강제 재적용 */
+                .table-header-fix {
+                    position: sticky !important;
+                    top: 0 !important;
+                    z-index: 999 !important;
                 }
             `;
             document.head.appendChild(style);
+        }
+
+        // ⭐ 새로운 함수: 테이블 헤더 강제 고정
+        function forceFixTableHeader() {
+            setTimeout(() => {
+                const tableHeaders = document.querySelectorAll('#callsTable th');
+                tableHeaders.forEach(th => {
+                    th.classList.add('table-header-fix');
+                    th.style.position = 'sticky';
+                    th.style.top = '0';
+                    th.style.zIndex = '999';
+                    th.style.backgroundColor = '#f8f9fa';
+                });
+                
+                // 스크롤 컨테이너 확인 및 재설정
+                const resultsContent = document.querySelector('.results-content');
+                if (resultsContent) {
+                    resultsContent.style.position = 'relative';
+                    resultsContent.style.height = '100%';
+                }
+                
+                Utils.debugLog('테이블 헤더 강제 고정 적용 완료');
+            }, 100);
         }
 
         // 페이지 로드시 초기화
@@ -596,6 +652,14 @@
             applyFixedHeaderStyles();
             // 메인 초기화
             initializeApp();
+        });
+
+        // ⭐ 페이지 완전 로드 후 헤더 고정 재확인
+        window.addEventListener('load', function() {
+            setTimeout(() => {
+                forceFixTableHeader();
+                Utils.debugLog('페이지 완전 로드 후 헤더 고정 재확인 완료');
+            }, 500);
         });
 
         // 앱 초기화
@@ -876,6 +940,19 @@
                     clearInterval(connectionCheckInterval);
                 }
             });
+
+            // ⭐ 윈도우 리사이즈 시 헤더 고정 재적용
+            window.addEventListener('resize', function() {
+                forceFixTableHeader();
+            });
+
+            // ⭐ 테이블 스크롤 시 헤더 위치 확인
+            document.addEventListener('scroll', function() {
+                const resultsContent = document.querySelector('.results-content');
+                if (resultsContent && resultsContent.scrollTop > 0) {
+                    forceFixTableHeader();
+                }
+            }, true);
         }
 
         // 오류 표시
@@ -1351,6 +1428,9 @@
                     </td>
                 `;
             });
+
+            // ⭐ 테이블 완성 후 헤더 고정 강제 적용
+            forceFixTableHeader();
         }
 
         // 테이블 상단으로 스크롤
@@ -2383,6 +2463,13 @@
         // 요소 표시
         function showElement(elementId) {
             document.getElementById(elementId).classList.remove('hidden');
+            
+            // ⭐ 테이블 결과가 보여질 때 헤더 고정 재적용
+            if (elementId === 'callsResults') {
+                setTimeout(() => {
+                    forceFixTableHeader();
+                }, 50);
+            }
         }
 
         // 요소 숨기기
