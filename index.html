@@ -178,7 +178,7 @@
                                             </th>
                                             <th style="position: sticky; top: 0; z-index: 200; background: #f8f9fa; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">처리상태</th>
                                             <th style="position: sticky; top: 0; z-index: 200; background: #f8f9fa; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">처리담당자</th>
-                                            <th style="position: sticky; top: 0; z-index: 200; background: #f8f9fa; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">액션</th>
+                                            <th style="position: sticky; top: 0; z-index: 200; background: #f8f9fa; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">OB콜처리</th>
                                         </tr>
                                     </thead>
                                     <tbody></tbody>
@@ -216,7 +216,7 @@
                                 <th>상태</th>
                                 <th>등록일</th>
                                 <th>마지막 로그인</th>
-                                <th>액션</th>
+                                <th>OB콜처리</th>
                             </tr>
                         </thead>
                         <tbody></tbody>
@@ -247,7 +247,7 @@
                                 <th>요청 권한</th>
                                 <th>희망 ID</th>
                                 <th>상태</th>
-                                <th>액션</th>
+                                <th>OB콜처리</th>
                             </tr>
                         </thead>
                         <tbody></tbody>
@@ -2161,7 +2161,7 @@ function setupModalWithCall(call, tableIndex) {
                         cells[8].textContent = processManager;
                     }
                     
-                    // 액션 버튼 업데이트 (10번째 칼럼, 인덱스 9)
+                    // OB콜처리 버튼 업데이트 (10번째 칼럼, 인덱스 9)
                     if (cells[9]) {
                         cells[9].innerHTML = `
                             <button class="btn btn-primary btn-small" onclick="openProcessModal(${tableIndex})">
