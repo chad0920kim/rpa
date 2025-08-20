@@ -1829,44 +1829,46 @@
             }
         }
         
-        // 모달 설정 공통 함수
-        function setupModalWithCall(call, tableIndex) {
-            Utils.debugLog('모달 설정 시작:', { call, tableIndex });
-            
-            currentProcessingCall = { 
-                ...call, 
-                tableIndex: tableIndex,
-                phoneNumber: call.phoneNumber,
-                startTime: call.startTime
-            };
+        // 수정된 setupModalWithCall 함수
+function setupModalWithCall(call, tableIndex) {
+    Utils.debugLog('모달 설정 시작:', { call, tableIndex });
+    
+    currentProcessingCall = { 
+        ...call, 
+        tableIndex: tableIndex,
+        phoneNumber: call.phoneNumber,
+        startTime: call.startTime
+    };
 
-            Utils.debugLog('currentProcessingCall 설정 완료:', currentProcessingCall);
+    Utils.debugLog('currentProcessingCall 설정 완료:', currentProcessingCall);
 
-            document.getElementById('modalPhoneNumber').textContent = call.phoneNumber;
-            document.getElementById('modalCallInfo').textContent = 
-                `${call.callCount > 1 ? call.callCount + '번 중복 | ' : ''}${call.queue} | ${Math.round(call.duration / 60)}분 대기`;
-            
-            document.getElementById('processStatus').value = call.processStatus || '';
-            document.getElementById('processManager').value = call.processManager || (currentUser ? currentUser.name : '');
-            document.getElementById('processNote').value = '';
+    document.getElementById('modalPhoneNumber').textContent = call.phoneNumber;
+    document.getElementById('modalCallInfo').textContent = 
+        `${call.callCount > 1 ? call.callCount + '번 중복 | ' : ''}${call.queue} | ${Math.round(call.duration / 60)}분 대기`;
+    
+    document.getElementById('processStatus').value = call.processStatus || '';
+    document.getElementById('processManager').value = call.processManager || (currentUser ? currentUser.name : '');
+    
+    // ⭐ 수정: 기존 저장된 메모값 불러오기
+    document.getElementById('processNote').value = call.processNote || call.processedNote || '';
 
-            // 현재 처리 중인 행에 하이라이트 표시
-            highlightTableRow(tableIndex, '#e0f2fe'); // 연한 파란색으로 처리 중 표시
+    // 현재 처리 중인 행에 하이라이트 표시
+    highlightTableRow(tableIndex, '#e0f2fe'); // 연한 파란색으로 처리 중 표시
 
-            hideAlert('processModalError');
-            document.getElementById('processModal').classList.add('show');
-            
-            // 처리 상태에 포커스
-            setTimeout(() => {
-                if (!call.processStatus) {
-                    document.getElementById('processStatus').focus();
-                } else {
-                    document.getElementById('processManager').focus();
-                }
-            }, 100);
-            
-            Utils.debugLog('모달 설정 완료');
+    hideAlert('processModalError');
+    document.getElementById('processModal').classList.add('show');
+    
+    // 처리 상태에 포커스
+    setTimeout(() => {
+        if (!call.processStatus) {
+            document.getElementById('processStatus').focus();
+        } else {
+            document.getElementById('processManager').focus();
         }
+    }, 100);
+    
+    Utils.debugLog('모달 설정 완료');
+}
 
         // Missed Call 처리 모달 닫기
         function closeProcessModal() {
