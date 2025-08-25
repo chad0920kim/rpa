@@ -166,7 +166,7 @@
                                             <th class="sortable-header" onclick="sortTable('startTime')" title="클릭하여 정렬" 
                                                 style="position: sticky; top: 0; z-index: 200; background: #f8f9fa; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
                                                 인입시간
-                                                <span id="sortArrow-startTime" class="sort-arrow desc active"></span>
+                                                <span id="sortArrow-startTime" class="sort-arrow none"></span>
                                             </th>
                                             <th style="position: sticky; top: 0; z-index: 200; background: #f8f9fa; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">대기시간(분)</th>
                                             <th style="position: sticky; top: 0; z-index: 200; background: #f8f9fa; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">전화번호</th>
@@ -505,7 +505,7 @@
         // 정렬 상태 관리
         let currentSort = {
             column: 'startTime',    // 기본 정렬 칼럼: 인입시간
-            direction: 'desc'       // 기본 정렬 방향: 내림차순 (늦은 시간부터)
+            direction: 'none'       // 기본 정렬 방향: none (원본 순서 유지)
         };
 
         // ⭐ 동적 스타일 적용 함수 (헤더 고정 강화 버전)
@@ -920,8 +920,6 @@
             }, 10 * 60 * 1000); // 10분
         }
 
-
-
         // 이벤트 리스너 설정
         function setupEventListeners() {
             // 로그인 폼
@@ -1107,7 +1105,7 @@
                     // 정렬 상태 초기화
                     currentSort = {
                         column: 'startTime',
-                        direction: 'desc'
+                        direction: 'none'
                     };
                     
                     // 로그인 화면으로 이동
@@ -1281,100 +1279,121 @@
             }
         }
 
-        // 콜 데이터 처리
+        // ⭐ 수정된 콜 데이터 처리 함수 - 원본 순서 유지
         function processCallData(rawCalls) {
-            const groups = {};
+            Utils.debugLog('processCallData 시작:', { rawCount: rawCalls.length });
             
-            // 전화번호별로 그룹핑
-            rawCalls.forEach((call, index) => {
+            // 1. 먼저 모든 데이터에 originalIndex 추가하여 원본 순서 유지
+            const callsWithIndex = rawCalls.map((call, index) => ({
+                ...call,
+                originalIndex: index
+            }));
+            
+            // 2. 전화번호별로 그룹핑 (원본 순서는 유지)
+            const phoneGroups = {};
+            
+            callsWithIndex.forEach(call => {
                 const phoneNumber = call.phoneNumber;
-                if (!groups[phoneNumber]) {
-                    groups[phoneNumber] = [];
+                if (!phoneGroups[phoneNumber]) {
+                    phoneGroups[phoneNumber] = [];
                 }
-                groups[phoneNumber].push({...call, originalIndex: index});
+                phoneGroups[phoneNumber].push(call);
             });
-
+            
+            // 3. 각 그룹에서 중복 횟수를 계산하되, 원본 순서는 유지
             const processedData = [];
-
-            Object.keys(groups).forEach(phoneNumber => {
-                const calls = groups[phoneNumber];
+            
+            Object.keys(phoneGroups).forEach(phoneNumber => {
+                const calls = phoneGroups[phoneNumber];
                 
-                // 시간 정렬
+                // 시간 순으로 정렬 (같은 전화번호 내에서만)
                 calls.sort((a, b) => {
                     try {
                         const timeStrA = Utils.createSortableTimeString(a.date, a.startTime);
                         const timeStrB = Utils.createSortableTimeString(b.date, b.startTime);
                         return timeStrA.localeCompare(timeStrB);
                     } catch (error) {
-                        Utils.debugLog('시간 정렬 오류:', error);
-                        return 0;
+                        // 시간 정렬 실패 시 원본 인덱스로 정렬
+                        return a.originalIndex - b.originalIndex;
                     }
                 });
-
-                // 처리가 된 콜들을 기준으로 그룹 분리
+                
+                // 연속된 미처리 그룹을 찾아서 하나로 합치기
                 let currentGroup = [];
                 
                 for (let i = 0; i < calls.length; i++) {
                     const call = calls[i];
-                    currentGroup.push(call);
+                    const hasStatus = call.processStatus && call.processStatus.trim() !== '';
                     
-                    // 다음 콜이 있고, 현재 콜이 처리되었으며, 다음 콜이 처리되지 않았다면 그룹 종료
-                    if (i < calls.length - 1) {
-                        const nextCall = calls[i + 1];
-                        if (call.processStatus && !nextCall.processStatus) {
-                            // 현재 그룹 처리
-                            if (currentGroup.length > 0) {
-                                const latestCall = currentGroup[currentGroup.length - 1];
-                                processedData.push({
-                                    ...latestCall,
-                                    callCount: currentGroup.length,
-                                    groupCalls: currentGroup.map(c => ({...c}))
-                                });
-                            }
+                    if (hasStatus) {
+                        // 처리된 콜: 이전 그룹이 있다면 처리하고, 현재 콜을 개별적으로 추가
+                        if (currentGroup.length > 0) {
+                            // 이전 미처리 그룹 처리
+                            const representativeCall = currentGroup[currentGroup.length - 1]; // 가장 최근 콜
+                            processedData.push({
+                                ...representativeCall,
+                                callCount: currentGroup.length,
+                                groupCalls: [...currentGroup]
+                            });
                             currentGroup = [];
                         }
+                        
+                        // 처리된 콜은 개별적으로 추가
+                        processedData.push({
+                            ...call,
+                            callCount: 1,
+                            groupCalls: [call]
+                        });
+                        
+                    } else {
+                        // 미처리 콜: 현재 그룹에 추가
+                        currentGroup.push(call);
                     }
                 }
                 
-                // 마지막 그룹 처리
+                // 마지막에 남은 미처리 그룹 처리
                 if (currentGroup.length > 0) {
-                    const latestCall = currentGroup[currentGroup.length - 1];
+                    const representativeCall = currentGroup[currentGroup.length - 1];
                     processedData.push({
-                        ...latestCall,
+                        ...representativeCall,
                         callCount: currentGroup.length,
-                        groupCalls: currentGroup.map(c => ({...c}))
+                        groupCalls: [...currentGroup]
                     });
                 }
             });
-
+            
+            // 4. ⭐ 핵심: 원본 인덱스 기준으로 정렬하여 원본 순서 복원
+            processedData.sort((a, b) => a.originalIndex - b.originalIndex);
+            
             Utils.debugLog('processCallData 완료:', {
                 rawCount: rawCalls.length,
-                processedCount: processedData.length
+                processedCount: processedData.length,
+                sampleData: processedData.slice(0, 3).map(d => ({
+                    originalIndex: d.originalIndex,
+                    phoneNumber: d.phoneNumber,
+                    startTime: d.startTime
+                }))
             });
 
             return processedData;
         }
 
-        // 콜 데이터 결과 표시 (기본 정렬 적용)
+        // ⭐ 수정된 콜 데이터 결과 표시 (원본 순서 우선)
         function displayCallsResults(data) {
-            // 기본 정렬 상태 설정 (인입시간 내림차순)
+            // 원본 순서 그대로 표시 (추가 정렬 없음)
+            Utils.debugLog('displayCallsResults 시작:', { dataLength: data.length });
+            
+            // 정렬 상태 초기화 (기본값을 none으로)
             currentSort = {
                 column: 'startTime',
-                direction: 'desc'
+                direction: 'none'
             };
-            
-            // 기본 정렬 적용
-            const sortedData = [...data].sort((a, b) => {
-                const timeStrA = Utils.createSortableTimeString(a.date, a.startTime);
-                const timeStrB = Utils.createSortableTimeString(b.date, b.startTime);
-                return timeStrB.localeCompare(timeStrA); // 내림차순 (늦은 시간부터)
-            });
             
             // 정렬 화살표 업데이트
             updateSortArrows();
             
-            // 실제 테이블 표시
-            displayCallsResultsWithData(sortedData);
+            // 원본 데이터 그대로 테이블 표시
+            displayCallsResultsWithData(data);
         }
 
         // 콜 데이터 결과 표시 (순번 및 중복 횟수 합계 추가된 버전)
