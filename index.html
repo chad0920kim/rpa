@@ -1377,13 +1377,18 @@
             displayCallsResultsWithData(sortedData);
         }
 
-        // 콜 데이터 결과 표시 (순번 추가된 버전)
+// 콜 데이터 결과 표시 (순번 추가된 버전)
         function displayCallsResultsWithData(data) {
             const countDiv = document.getElementById('resultsCount');
             const tbody = document.querySelector('#callsTable tbody');
             const phoneNumberFilter = document.getElementById('phoneNumberFilter').value.trim();
             const processFilter = document.getElementById('processFilter').value;
             const queueFilter = document.getElementById('queueFilter').value;
+            
+            // 중복 횟수 합계 계산
+            const totalCallCount = data.reduce((sum, call) => {
+                return sum + (parseInt(call.callCount) || 0);
+            }, 0);
             
             // 필터 상태에 따른 제목 변경
             let filterText = '';
@@ -1405,8 +1410,8 @@
                 filterText += ` (${queueName})`;
             }
 
-            countDiv.textContent = `📊 조회 결과: ${data.length}건${filterText}`;
-            tbody.innerHTML = '';
+            // 중복 횟수 합계를 포함한 결과 표시
+            countDiv.textContent = `📊 조회 결과: ${data.length}건 (총 ${totalCallCount}회)${filterText}`;
 
             // 글로벌 테이블 데이터 저장 (모달에서 사용)
             window.currentTableData = data;
